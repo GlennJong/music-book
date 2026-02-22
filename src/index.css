@@ -1,5 +1,39 @@
 @import "tailwindcss";
 
+@theme {
+  --color-bg-main: var(--bg-main);
+  --color-bg-card: var(--bg-card);
+  --color-bg-item: var(--bg-item);
+  --color-text-main: var(--text-main);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-border-color: var(--border-color);
+  --color-primary: var(--primary);
+  --color-primary-bg-subtle: var(--primary-bg-subtle);
+  --color-danger: var(--danger);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-warning-bg-subtle: var(--warning-bg-subtle);
+  --color-warning-text: var(--warning-text);
+  --color-text-inv: var(--text-inv);
+  --color-input-bg: var(--input-bg);
+  --color-chip-bg: var(--chip-bg);
+  --color-shadow-color: var(--shadow-color);
+  --color-modal-overlay: var(--modal-overlay);
+  
+  --color-background: var(--bg-main);
+  --color-foreground: var(--text-main);
+  --color-primary-foreground: var(--text-inv);
+  --color-secondary: var(--text-secondary);
+  --color-secondary-foreground: var(--text-main);
+  --color-muted: var(--text-muted);
+  --color-muted-foreground: var(--text-secondary);
+  --color-card: var(--bg-card);
+  --color-card-foreground: var(--text-main);
+  --color-border: var(--border-color);
+  --color-input: var(--input-bg);
+}
+
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
