@@ -3,35 +3,33 @@
 @theme {
   --color-bg-main: var(--bg-main);
   --color-bg-card: var(--bg-card);
-  --color-bg-item: var(--bg-item);
+  --color-bg-subtle: var(--bg-subtle);
   --color-text-main: var(--text-main);
   --color-text-secondary: var(--text-secondary);
   --color-text-muted: var(--text-muted);
   --color-border-color: var(--border-color);
   --color-primary: var(--primary);
-  --color-primary-bg-subtle: var(--primary-bg-subtle);
-  --color-danger: var(--danger);
-  --color-success: var(--success);
-  --color-warning: var(--warning);
-  --color-warning-bg-subtle: var(--warning-bg-subtle);
-  --color-warning-text: var(--warning-text);
-  --color-text-inv: var(--text-inv);
-  --color-input-bg: var(--input-bg);
-  --color-chip-bg: var(--chip-bg);
-  --color-shadow-color: var(--shadow-color);
-  --color-modal-overlay: var(--modal-overlay);
+  --color-primary-fg: var(--primary-fg);
+  --color-primary-subtle: var(--primary-subtle);
   
   --color-background: var(--bg-main);
   --color-foreground: var(--text-main);
-  --color-primary-foreground: var(--text-inv);
-  --color-secondary: var(--text-secondary);
+  
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-fg);
+  
+  --color-secondary: var(--bg-subtle);
   --color-secondary-foreground: var(--text-main);
-  --color-muted: var(--text-muted);
-  --color-muted-foreground: var(--text-secondary);
+  
+  --color-muted: var(--bg-subtle);
+  --color-muted-foreground: var(--text-muted);
+  
   --color-card: var(--bg-card);
   --color-card-foreground: var(--text-main);
+  
   --color-border: var(--border-color);
-  --color-input: var(--input-bg);
+  --color-input: var(--bg-subtle);
+  --color-ring: var(--primary);
 }
 
 :root {
@@ -40,25 +38,27 @@
   font-weight: 400;
 
   /* Default Light Theme Variables */
-  --bg-main: #f5f5f5;
+  --bg-main: #f8f9fa;
   --bg-card: #ffffff;
-  --bg-item: #ffffff;
+  --bg-subtle: #e9ecef;
+  
   --text-main: #212529;
-  --text-secondary: #6c757d;
-  --text-muted: #adb5bd;
+  --text-secondary: #495057;
+  --text-muted: #868e96;
+  
   --border-color: #dee2e6;
+  
   --primary: #1a76cd;
-  --primary-bg-subtle: #e8f1fa;
+  --primary-fg: #ffffff;
+  --primary-subtle: #e7f1ff;
+  
   --danger: #dc3545;
   --success: #198754;
   --warning: #ffc107;
-  --warning-bg-subtle: #fff3cd;
-  --warning-text: #856404;
-  --text-inv: #ffffff;
-  --input-bg: #e9ecef;
-  --chip-bg: #e0e0e0;
-  --shadow-color: rgba(0,0,0,0.1);
-  --modal-overlay: rgba(0,0,0,0.5);
+  
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   
   /* Inherited basic props */
   color-scheme: light dark;
@@ -73,25 +73,23 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg-main: #121212;
-    --bg-card: #1e1e1e;
-    --bg-item: #2c2c2c;
-    --text-main: #e0e0e0;
-    --text-secondary: #b0b0b0;
-    --text-muted: #666666;
-    --border-color: #444444;
-    --primary: #5ea4e0;
-    --primary-bg-subtle: #1a3a5e;
-    --danger: #ff6b6b;
-    --success: #51cf66;
-    --warning: #fcc419;
-    --warning-bg-subtle: #4d3800; /* Dark yellow/brown */
-    --warning-text: #ffd43b; /* Brighter yellow for text on dark */
-    --text-inv: #121212;
-    --input-bg: #333333;
-    --chip-bg: #444444;
-    --shadow-color: rgba(0,0,0,0.5);
-    --modal-overlay: rgba(0,0,0,0.7);
+    --bg-main: #09090b;
+    --bg-card: #18181b;
+    --bg-subtle: #27272a;
+    
+    --text-main: #fafafa;
+    --text-secondary: #a1a1aa;
+    --text-muted: #52525b;
+    
+    --border-color: #27272a;
+    
+    --primary: #3b82f6; /* Brighter blue for dark mode */
+    --primary-fg: #ffffff;
+    --primary-subtle: #1e3a8a;
+    
+    --danger: #ef4444;
+    --success: #22c55e;
+    --warning: #eab308;
   }
 }
 
@@ -123,10 +121,6 @@ h1 {
 
 /* Reset buttons to allow custom styling in components */
 button {
-  font-family: inherit;
-  border: none;
-  background: transparent;
-  padding: 0;
   cursor: pointer;
 }
 input {
