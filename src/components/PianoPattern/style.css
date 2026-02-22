@@ -1,0 +1,97 @@
+.piano-container {
+  overflow-x: auto;
+  padding: 20px;
+  background-color: #2c3e50;
+  border-radius: 8px;
+  display: flex;
+  justify-content: center;
+}
+
+.piano {
+  display: flex;
+  position: relative;
+}
+
+.key-group {
+  position: relative;
+}
+
+.white-key {
+  width: 40px;
+  height: 150px;
+  background-color: white;
+  border: 1px solid #ccc;
+  border-radius: 0 0 4px 4px;
+  box-sizing: border-box;
+  cursor: pointer;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 10px;
+  color: #333;
+  font-size: 12px;
+  position: relative;
+  z-index: 1;
+  transition: background-color 0.1s;
+}
+
+.white-key:hover {
+  background-color: #f0f0f0;
+}
+
+.white-key:active {
+  background-color: #ddd;
+}
+
+.white-key.active {
+    background-color: #ddd;
+}
+
+.black-key {
+  width: 24px;
+  height: 90px;
+  background-color: #000;
+  border-radius: 0 0 4px 4px;
+  position: absolute;
+  top: 0;
+  right: -12px;
+  z-index: 2;
+  cursor: pointer;
+  color: white;
+  font-size: 10px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 8px;
+  transition: background-color 0.1s;
+}
+
+.black-key:hover {
+  background-color: #333;
+}
+
+.black-key:active {
+  background-color: #555;
+}
+
+/* Specific styling to ensure text is readable if needed, though usually blank on real pianos */
+.key-label {
+  pointer-events: none;
+  user-select: none;
+}
+
+@media (max-width: 600px) {
+  .piano-container {
+    padding: 0;
+    justify-content: flex-start; /* Ensure start is visible if scrolling */
+  }
+
+  .white-key {
+    width: 32px;
+  }
+
+  .black-key {
+    width: 20px;
+    right: -10px; /* Half of 20px */
+  }
+}
