@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 
 // --- 與 Renderer 一致的型別定義 ---
 
@@ -34,7 +34,7 @@ const Converter: React.FC<ConverterProps> = ({ onChange }) => {
     }
   };
 
-  const fetchWithRetry = async (payload: any, retries = 5, delay = 1000): Promise<any> => {
+  const fetchWithRetry = async (payload: Record<string, unknown>, retries = 5, delay = 1000): Promise<unknown> => {
     try {
       const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
         method: 'POST',
@@ -43,12 +43,12 @@ const Converter: React.FC<ConverterProps> = ({ onChange }) => {
       });
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       return await response.json();
-    } catch (err) {
+    } catch (_err) {
       if (retries > 0) {
         await new Promise(resolve => setTimeout(resolve, delay));
         return fetchWithRetry(payload, retries - 1, delay * 2);
       }
-      throw err;
+      throw _err;
     }
   };
 

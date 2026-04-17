@@ -393,7 +393,18 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
               <span className="material-icons text-[22px]">{isEditMode ? 'edit' : 'music_note'}</span>
             </div>
             <div>
-              <h1 className="text-xl font-black tracking-tight uppercase">{tabData.metadata.title}</h1>
+              {isEditMode ? (
+                <input
+                  className="text-xl font-black tracking-tight uppercase bg-transparent border-b-2 border-indigo-100 focus:border-indigo-400 outline-none w-full mb-1"
+                  value={tabData.metadata.title}
+                  onChange={e => setTabData({ ...tabData, metadata: { ...tabData.metadata, title: e.target.value } })}
+                  placeholder="請輸入標題"
+                  aria-label="樂譜標題"
+                  maxLength={64}
+                />
+              ) : (
+                <h3 className="text-xl font-black tracking-tight uppercase">{tabData.metadata.title}</h3>
+              )}
               <div className="flex gap-3 text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-0.5">
                 <span>{tabData.metadata.key}</span>
                 <span>•</span>
