@@ -536,6 +536,22 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
 
 
             <div className="space-y-28">
+              {isEditMode && (
+                <button
+                  onClick={() => {
+                    const newId = tabData.measures.length > 0 ? Math.max(...tabData.measures.map(m => m.id)) + 1 : 1;
+                    const newMeasure = { id: newId, chord: '', lyrics: '', notes: [] };
+                    saveToHistory({
+                      ...tabData,
+                      measures: [newMeasure, ...tabData.measures]
+                    });
+                  }}
+                  className="w-full mb-8 py-4 border-4 border-dashed border-indigo-200 rounded-[2rem] flex flex-col items-center justify-center gap-2 text-indigo-400 hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50/50 transition-all group"
+                >
+                  <span className="material-icons text-[28px] group-hover:rotate-180 transition-transform duration-700">add</span>
+                  <span className="font-black uppercase tracking-[0.2em] text-sm">新增小節（最前面）</span>
+                </button>
+              )}
               {Array.from({ length: Math.ceil(tabData.measures.length / measuresPerRow) }).map((_, rowIdx) => {
                 const rowMeasures = tabData.measures.slice(rowIdx * measuresPerRow, (rowIdx + 1) * measuresPerRow);
                 const blanks = Array.from({ length: measuresPerRow - rowMeasures.length });
@@ -570,16 +586,22 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
                             onTextTab={() => setActiveTextTab({ measureId: measure.id, text: measure.textTab || '' })}
                             onCopy={() => {
                               const maxId = tabData.measures.length > 0 ? Math.max(...tabData.measures.map(m => m.id)) : 0;
-                              const target = tabData.measures.find(m => m.id === measure.id);
+                              const idx = tabData.measures.findIndex(m => m.id === measure.id);
+                              const target = tabData.measures[idx];
                               if (!target) return;
                               const newMeasure = {
                                 ...target,
                                 id: maxId + 1,
                                 notes: target.notes.map(n => ({ ...n })),
                               };
+                              const newMeasures = [
+                                ...tabData.measures.slice(0, idx + 1),
+                                newMeasure,
+                                ...tabData.measures.slice(idx + 1)
+                              ];
                               saveToHistory({
                                 ...tabData,
-                                measures: [...tabData.measures, newMeasure]
+                                measures: newMeasures
                               });
                             }}
                             onDelete={() => {
@@ -590,46 +612,46 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
                             }}
                           />
                         )}
-                                          {/* 文字譜彈窗 */}
-                                          {activeTextTab && activeTextTab.measureId === measure.id && (
-                                            <>
-                                              <div className="fixed inset-0 z-50 bg-black/20 backdrop-blur-[2px]" onClick={() => setActiveTextTab(null)} />
-                                              <div className="absolute inset-x-0 top-10 z-60 bg-white/95 backdrop-blur-md rounded-3xl p-8 border-2 border-emerald-500 shadow-2xl flex flex-col animate-in fade-in zoom-in duration-200 max-w-lg mx-auto">
-                                                <div className="flex items-center justify-between mb-4">
-                                                  <h3 className="font-black text-lg text-emerald-700">編輯文字譜</h3>
-                                                  <button onClick={() => setActiveTextTab(null)} className="p-2 hover:bg-zinc-100 rounded-full text-zinc-400 flex items-center">
-                                                    <span className="material-icons text-[24px]">close</span>
-                                                  </button>
-                                                </div>
-                                                <textarea
-                                                  className="w-full rounded-xl border border-emerald-200 p-4 font-mono text-sm min-h-40 focus:outline-none focus:ring-2 focus:ring-emerald-400"
-                                                  value={activeTextTab.text}
-                                                  onChange={e => setActiveTextTab({ ...activeTextTab, text: e.target.value })}
-                                                  placeholder={
+                        {/* 文字譜彈窗 */}
+                        {activeTextTab && activeTextTab.measureId === measure.id && (
+                          <>
+                            <div className="fixed inset-0 z-50 bg-black/20 backdrop-blur-[2px]" onClick={() => setActiveTextTab(null)} />
+                            <div className="absolute inset-x-0 top-10 z-60 bg-white/95 backdrop-blur-md rounded-3xl p-8 border-2 border-emerald-500 shadow-2xl flex flex-col animate-in fade-in zoom-in duration-200 max-w-lg mx-auto">
+                              <div className="flex items-center justify-between mb-4">
+                                <h3 className="font-black text-lg text-emerald-700">編輯文字譜</h3>
+                                <button onClick={() => setActiveTextTab(null)} className="p-2 hover:bg-zinc-100 rounded-full text-zinc-400 flex items-center">
+                                  <span className="material-icons text-[24px]">close</span>
+                                </button>
+                              </div>
+                              <textarea
+                                className="w-full rounded-xl border border-emerald-200 p-4 font-mono text-sm min-h-40 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                                value={activeTextTab.text}
+                                onChange={e => setActiveTextTab({ ...activeTextTab, text: e.target.value })}
+                                placeholder={
 `E |  |  |  |  |
 B |  |  |  |  |
 G |  |  |  |  |
 D |  |  |  |  |
 A |  |  |  |  |
 E |  |  |  |  |`
-                                                  }
-                                                />
-                                                <div className="flex justify-end gap-2 mt-4">
-                                                  <button
-                                                    className="px-5 py-2 rounded-xl bg-zinc-100 text-zinc-500 hover:bg-zinc-200 font-bold"
-                                                    onClick={() => setActiveTextTab(null)}
-                                                  >取消</button>
-                                                  <button
-                                                    className="px-5 py-2 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 font-bold"
-                                                    onClick={() => {
-                                                      updateTextTab(measure.id, activeTextTab.text);
-                                                      setActiveTextTab(null);
-                                                    }}
-                                                  >儲存</button>
-                                                </div>
-                                              </div>
-                                            </>
-                                          )}
+                                }
+                              />
+                              <div className="flex justify-end gap-2 mt-4">
+                                <button
+                                  className="px-5 py-2 rounded-xl bg-zinc-100 text-zinc-500 hover:bg-zinc-200 font-bold"
+                                  onClick={() => setActiveTextTab(null)}
+                                >取消</button>
+                                <button
+                                  className="px-5 py-2 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 font-bold"
+                                  onClick={() => {
+                                    updateTextTab(measure.id, activeTextTab.text);
+                                    setActiveTextTab(null);
+                                  }}
+                                >儲存</button>
+                              </div>
+                            </div>
+                          </>
+                        )}
                       {/* 和弦選擇彈窗 */}
                       {activeChordPicker === measure.id && (
                         <>
@@ -687,7 +709,7 @@ E |  |  |  |  |`
                             style={{ userSelect: 'none' }}
                           >
                             <span className="text-6xl font-black tracking-tighter uppercase leading-none">{measure.chord || "-"}</span>
-                            {isEditMode && <span className="ml-4 text-[10px] font-black text-white uppercase tracking-widest bg-indigo-500 px-3 py-1 rounded-full shadow-lg shadow-indigo-100">變更和弦</span>}
+                            {/* {isEditMode && <span className="ml-4 text-[10px] font-black text-white uppercase tracking-widest bg-indigo-500 px-3 py-1 rounded-full shadow-lg shadow-indigo-100">變更和弦</span>} */}
                           </div>
                           <div className="text-[10px] font-black text-zinc-300 uppercase tracking-widest flex items-center gap-2">
                             <span className="material-icons text-[14px]">straighten</span> 小節 #{measure.id}
