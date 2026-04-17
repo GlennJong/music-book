@@ -219,7 +219,7 @@ const Converter: React.FC<ConverterProps> = ({ onChange }) => {
                   const url = URL.createObjectURL(blob);
                   const a = document.createElement('a');
                   a.href = url;
-                  a.download = `${result.metadata.title || 'tab_data'}.json`;
+                  a.download = `${result.title || 'tab_data'}.json`;
                   a.click();
                 }}
               >

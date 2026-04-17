@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import SetupScreen from './Stepup';
+import SetupScreen from './Setup';
 
 export function SetupScreenWrapper({ onDone }: { onDone: () => void }) {
   const [ready, setReady] = useState(false);
