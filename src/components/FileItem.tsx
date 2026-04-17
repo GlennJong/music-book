@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { type DriveFile } from '@glennjong/vibe-sheets';
 
-import type { TabData } from '../screen/TabScreen/index';
+// import type { TabData } from '../screen/TabScreen/index';
 
 const FileItem = ({ isNew, file, onSelect }: { isNew: boolean, file: DriveFile, onSelect: (scriptUrl: string) => void }) => {
   const [ isFetching, setIsFetching ] = useState(false);
