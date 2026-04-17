@@ -75,6 +75,24 @@ const BottomNav = ({ currentTab, onTabChange }: BottomNavProps) => {
         <span className="material-icons" style={{ fontSize: '1.5em' }}>mic</span>
         <span style={{ fontSize: '0.7em', marginTop: '4px' }}>Vocal</span>
       </button>
+
+      <button 
+        onClick={() => onTabChange('tab')}
+        style={{
+          background: 'none',
+          border: 'none',
+          color: currentTab === 'tab' ? 'var(--primary)' : 'var(--text-muted)',
+          fontSize: '1em',
+          cursor: 'pointer',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          flex: 1
+        }}
+      >
+        <span className="material-icons" style={{ fontSize: '1.5em' }}>mic</span>
+        <span style={{ fontSize: '0.7em', marginTop: '4px' }}>Vocal</span>
+      </button>
     </div>
   );
 };

@@ -3,9 +3,10 @@ import BottomNav from "../components/BottomNav";
 
 const TryScreen = lazy(() => import("./TryScreen"));
 const LearnScreen = lazy(() => import("./LearnScreen"));
+const TabScreen = lazy(() => import("./TabScreen"));
 const VocalScreen = lazy(() => import("./VocalScreen"));
 
-export type Tab = 'try' | 'learn' | 'vocal';
+export type Tab = 'try' | 'learn' | 'vocal' | 'tab';
 
 const MainLayout = () => {
   const [currentTab, setCurrentTab] = useState<Tab>('learn');
@@ -50,6 +51,9 @@ const MainLayout = () => {
           )}
           {currentTab === 'vocal' && (
             <VocalScreen />
+          )}
+          {currentTab === 'tab' && (
+            <TabScreen />
           )}
         </Suspense>
       </div>
