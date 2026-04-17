@@ -98,11 +98,13 @@ const parseChordNotes = (chordName: string): number[] => {
 const getNoteMidi = (stringNum: number, fret: number): number => STRING_BASE_MIDI[stringNum - 1] + fret;
 
 
+
 interface TabProps {
   tabData: TabData;
+  setTabData: (data: TabData) => void;
 }
 
-const Tab: React.FC<TabProps> = ({ tabData }) => {
+const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
   const [measuresPerRow, setMeasuresPerRow] = useState<number>(4);
   const [history, setHistory] = useState<HistoryState>({ past: [], future: [] });
   const [viewMode, setViewMode] = useState<'render' | 'data'>('render');
@@ -141,13 +143,14 @@ const Tab: React.FC<TabProps> = ({ tabData }) => {
   }, []);
 
   // --- 歷史紀錄系統 ---
+
   const saveToHistory = useCallback((newData: TabData) => {
     setHistory(prev => ({
       past: [...prev.past, tabData],
       future: []
     }));
     setTabData(newData);
-  }, [tabData]);
+  }, [tabData, setTabData]);
 
   const undo = useCallback(() => {
     if (history.past.length === 0) return;
@@ -157,7 +160,7 @@ const Tab: React.FC<TabProps> = ({ tabData }) => {
       future: [tabData, ...prev.future]
     }));
     setTabData(previous);
-  }, [history, tabData]);
+  }, [history, tabData, setTabData]);
 
   const redo = useCallback(() => {
     if (history.future.length === 0) return;
@@ -167,7 +170,7 @@ const Tab: React.FC<TabProps> = ({ tabData }) => {
       future: prev.future.slice(1)
     }));
     setTabData(next);
-  }, [history, tabData]);
+  }, [history, tabData, setTabData]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -383,7 +386,7 @@ const Tab: React.FC<TabProps> = ({ tabData }) => {
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900 font-sans selection:bg-indigo-100">
       {/* 導覽列 */}
-      <nav className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-zinc-200 px-6 py-4">
+      <nav className="z-40 bg-white/80 backdrop-blur-md border-b border-zinc-200 px-6 py-4">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-4">
             <div className={`w-11 h-11 rounded-2xl flex items-center justify-center text-white shadow-xl transition-all ${isEditMode ? 'bg-amber-500 scale-105 shadow-amber-200' : 'bg-indigo-600'}`}>
@@ -678,20 +681,20 @@ const Tab: React.FC<TabProps> = ({ tabData }) => {
         )}
       </main>
 
-      <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 flex items-center gap-6">
+      <div className="fixed bottom-14 left-1/2 -translate-x-1/2 z-50 flex items-center gap-6">
         <div className="bg-white/95 backdrop-blur-3xl px-12 py-7 rounded-4xl shadow-2xl border border-zinc-200/50 flex items-center gap-12 ring-1 ring-zinc-900/10">
           <button 
             onClick={() => { if(isPlaying) playTab(); setIsEditMode(!isEditMode); }}
             className={`flex items-center gap-5 px-10 py-5 rounded-4xl font-black text-sm tracking-[0.2em] transition-all active:scale-95 ${isEditMode ? 'bg-amber-100 text-amber-800 ring-2 ring-amber-200 shadow-xl shadow-amber-100' : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200'}`}
           >
-            <span className="material-icons text-[22px]">{isEditMode ? 'check' : 'layers'}</span>
+            <span className="material-icons text-[16px]">{isEditMode ? 'check' : 'layers'}</span>
             {isEditMode ? "FINISH" : "EDIT"}
           </button>
           
           <button 
             onClick={playTab}
             disabled={isEditMode}
-            className={`w-20 h-20 rounded-[2.5rem] flex items-center justify-center transition-all shadow-2xl ${
+            className={`w-12 h-12 rounded-[2.5rem] flex items-center justify-center transition-all shadow-2xl ${
               isPlaying ? 'bg-red-500 shadow-red-200 text-white animate-pulse' : 
               isEditMode ? 'bg-zinc-100 text-zinc-200 cursor-not-allowed shadow-none' : 'bg-zinc-950 text-white hover:bg-indigo-600 hover:-translate-y-2 shadow-indigo-100'
             }`}

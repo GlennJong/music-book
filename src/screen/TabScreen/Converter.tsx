@@ -1,36 +1,14 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 
 // --- 與 Renderer 一致的型別定義 ---
-interface Metadata {
-  title: string;
-  artist: string;
-  key: string;
-  bpm: number;
-  subdivisions: number;
-  capo: number;
-  tuning: string[];
+
+import type { TabData } from './index';
+
+interface ConverterProps {
+  onChange?: (data: TabData) => void;
 }
 
-interface Note {
-  string: number;
-  fret: number;
-  beat: number;
-}
-
-interface Measure {
-  id: number;
-  chord: string;
-  lyrics: string;
-  notes: Note[];
-}
-
-interface TabData {
-  metadata: Metadata;
-  chordLib: Record<string, { frets: (number | null)[]; theory: string }>;
-  measures: Measure[];
-}
-
-const Converter: React.FC = () => {
+const Converter: React.FC<ConverterProps> = ({ onChange }) => {
   const [image, setImage] = useState<string | null>(null);
   const [base64Data, setBase64Data] = useState<string | null>(null);
   const [mimeType, setMimeType] = useState<string>('image/png');
@@ -39,14 +17,6 @@ const Converter: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const apiKey = ""; // 執行環境會自動注入
-
-  // 載入 Material Icons
-  useEffect(() => {
-    const link = document.createElement('link');
-    link.href = 'https://fonts.googleapis.com/icon?family=Material+Icons';
-    link.rel = 'stylesheet';
-    document.head.appendChild(link);
-  }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -120,7 +90,9 @@ const Converter: React.FC = () => {
       const data = await fetchWithRetry(payload);
       const textResult = data.candidates?.[0]?.content?.parts?.[0]?.text;
       if (textResult) {
-        setResult(JSON.parse(textResult));
+        const parsed = JSON.parse(textResult);
+        setResult(parsed);
+        if (onChange) onChange(parsed);
       }
     } catch (err) {
       setError("辨識過程中發生錯誤，請確認網路連線或嘗試更換清晰的圖片。");
@@ -153,7 +125,7 @@ const Converter: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
           {/* 左側：上傳區 */}
           <div className="space-y-6">
-            <div className={`relative border-2 border-dashed rounded-[3rem] transition-all flex flex-col items-center justify-center p-10 min-h-[440px] ${image ? 'border-indigo-200 bg-white shadow-inner' : 'border-zinc-200 hover:border-indigo-400 bg-zinc-100/30'}`}>
+            <div className={`relative border-2 border-dashed rounded-[3rem] transition-all flex flex-col items-center justify-center p-10 min-h-110 ${image ? 'border-indigo-200 bg-white shadow-inner' : 'border-zinc-200 hover:border-indigo-400 bg-zinc-100/30'}`}>
               {!image ? (
                 <>
                   <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mb-6 text-zinc-300">
@@ -170,7 +142,7 @@ const Converter: React.FC = () => {
               ) : (
                 <div className="relative w-full h-full flex flex-col items-center">
                   <div className="p-2 bg-zinc-50 rounded-3xl border border-zinc-100 shadow-sm mb-8">
-                    <img src={image} alt="Preview" className="max-h-[300px] rounded-2xl object-contain" />
+                    <img src={image} alt="Preview" className="max-h-75 rounded-2xl object-contain" />
                   </div>
                   <button 
                     onClick={() => {setImage(null); setBase64Data(null); setResult(null);}} 
@@ -185,7 +157,7 @@ const Converter: React.FC = () => {
             {image && !isProcessing && !result && (
               <button 
                 onClick={processImage}
-                className="w-full py-6 bg-zinc-950 text-white rounded-[2rem] font-black uppercase tracking-[0.3em] shadow-2xl shadow-zinc-200 hover:bg-indigo-600 hover:-translate-y-1.5 transition-all flex items-center justify-center gap-4"
+                className="w-full py-6 bg-zinc-950 text-white rounded-4xl font-black uppercase tracking-[0.3em] shadow-2xl shadow-zinc-200 hover:bg-indigo-600 hover:-translate-y-1.5 transition-all flex items-center justify-center gap-4"
               >
                 <span className="material-icons text-[20px]">auto_awesome</span>
                 Start AI Analysis
@@ -193,7 +165,7 @@ const Converter: React.FC = () => {
             )}
 
             {isProcessing && (
-              <div className="w-full py-6 bg-white border-2 border-zinc-100 text-zinc-400 rounded-[2rem] font-black uppercase tracking-[0.3em] flex items-center justify-center gap-4 animate-pulse">
+              <div className="w-full py-6 bg-white border-2 border-zinc-100 text-zinc-400 rounded-4xl font-black uppercase tracking-[0.3em] flex items-center justify-center gap-4 animate-pulse">
                 <div className="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
                 Analyzing Structure...
               </div>
@@ -202,7 +174,7 @@ const Converter: React.FC = () => {
 
           {/* 右側：結果區 */}
           <div className="space-y-6">
-            <div className="bg-zinc-900 rounded-[3rem] p-10 min-h-[440px] shadow-2xl relative overflow-hidden border border-zinc-800">
+            <div className="bg-zinc-900 rounded-[3rem] p-10 min-h-110 shadow-2xl relative overflow-hidden border border-zinc-800">
               <div className="flex items-center justify-between mb-8 border-b border-zinc-800 pb-6">
                 <span className="text-[10px] font-black uppercase text-zinc-500 tracking-[0.3em]">Result Output</span>
                 {result && (
@@ -229,7 +201,7 @@ const Converter: React.FC = () => {
 
               {result && (
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                  <pre className="text-indigo-300 font-mono text-[12px] leading-loose overflow-auto max-h-[520px] scrollbar-hide">
+                  <pre className="text-indigo-300 font-mono text-[12px] leading-loose overflow-auto max-h-130 scrollbar-hide">
                     {JSON.stringify(result, null, 2)}
                   </pre>
                 </div>
@@ -238,7 +210,7 @@ const Converter: React.FC = () => {
 
             {result && (
               <button 
-                className="w-full py-6 bg-white border-2 border-zinc-100 text-zinc-600 rounded-[2rem] font-black uppercase tracking-[0.2em] hover:bg-zinc-50 hover:text-indigo-600 transition-all flex items-center justify-center gap-4 shadow-sm active:scale-95"
+                className="w-full py-6 bg-white border-2 border-zinc-100 text-zinc-600 rounded-4xl font-black uppercase tracking-[0.2em] hover:bg-zinc-50 hover:text-indigo-600 transition-all flex items-center justify-center gap-4 shadow-sm active:scale-95"
                 onClick={() => {
                   const blob = new Blob([JSON.stringify(result, null, 2)], { type: 'application/json' });
                   const url = URL.createObjectURL(blob);
