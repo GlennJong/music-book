@@ -22,6 +22,7 @@ const Management: React.FC<ManagementProps> = ({ onSelect }) => {
       }
     }
     // 避免同步 setState，改為 effect 外部計算
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTabList(Array.isArray(arr) ? arr : []);
   }, []);
 

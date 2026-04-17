@@ -34,7 +34,7 @@ const Converter: React.FC<ConverterProps> = ({ onChange }) => {
     }
   };
 
-  const fetchWithRetry = async (payload: Record<string, unknown>, retries = 5, delay = 1000): Promise<unknown> => {
+  const fetchWithRetry = async (payload: Record<string, unknown>, retries = 5, delay = 1000): Promise<GeminiResponse> => {
     try {
       const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
         method: 'POST',
@@ -87,7 +87,7 @@ const Converter: React.FC<ConverterProps> = ({ onChange }) => {
         generationConfig: { responseMimeType: "application/json" }
       };
 
-      const data = await fetchWithRetry(payload);
+      const data: GeminiResponse = await fetchWithRetry(payload);
       const textResult = data.candidates?.[0]?.content?.parts?.[0]?.text;
       if (textResult) {
         const parsed = JSON.parse(textResult);
@@ -97,6 +97,7 @@ const Converter: React.FC<ConverterProps> = ({ onChange }) => {
         if (onChange) onChange(parsed);
       }
     } catch (err) {
+      console.log(err)
       setError("辨識過程中發生錯誤，請確認網路連線或嘗試更換清晰的圖片。");
     } finally {
       setIsProcessing(false);
@@ -240,3 +241,14 @@ const Converter: React.FC<ConverterProps> = ({ onChange }) => {
 };
 
 export default Converter;
+
+
+// Gemini Gemini API 回傳型別
+interface GeminiCandidate {
+  content?: {
+    parts?: { text?: string }[];
+  };
+}
+interface GeminiResponse {
+  candidates?: GeminiCandidate[];
+}

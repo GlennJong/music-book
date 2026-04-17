@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import MeasureActions from './components/MeasureActions';
 // ...existing code...
 
 import * as Tone from 'tone';
@@ -218,7 +219,7 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
     // 支援格式：E |  |  |  | 3|
     // 回傳 notes: Note[]
     const lines = text.split(/\r?\n/).map(l => l.trim());
-    const stringMap = { 'E': 1, 'B': 2, 'G': 3, 'D': 4, 'A': 5, 'e': 6 };
+    const stringMap: Record<string, number> = { 'E': 1, 'B': 2, 'G': 3, 'D': 4, 'A': 5, 'e': 6 };
     // 也支援小寫 e 當 6 弦
     const notes: Note[] = [];
     lines.forEach(line => {
@@ -227,8 +228,8 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
       // 取弦名
       const m = line.match(/^(E|B|G|D|A|e)\s*\|(.+)$/);
       if (!m) return;
-      const stringName = m[1];
-      const stringNum = stringName === 'e' ? 6 : stringMap[stringName];
+      const stringName = m[1] as keyof typeof stringMap;
+      const stringNum = stringMap[stringName];
       if (!stringNum) return;
       // 取每格
       const cells = m[2].split('|').map(c => c.trim());
@@ -543,88 +544,51 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
                     {rowMeasures.map((measure) => (
                       <div key={measure.id} className="relative flex-1 min-w-[320px]">
                         {isEditMode && (
-                          <div className="absolute top-2 right-2 z-20 flex gap-2">
-                            {/* Move Prev */}
-                            <button
-                              onClick={() => {
-                                const idx = tabData.measures.findIndex(m => m.id === measure.id);
-                                if (idx > 0) {
-                                  const newMeasures = [...tabData.measures];
-                                  const temp = newMeasures[idx - 1];
-                                  newMeasures[idx - 1] = newMeasures[idx];
-                                  newMeasures[idx] = temp;
-                                  saveToHistory({ ...tabData, measures: newMeasures });
-                                }
-                              }}
-                              className="p-2 rounded-full bg-zinc-50 hover:bg-indigo-100 text-indigo-400 hover:text-indigo-700 shadow transition-all disabled:opacity-30"
-                              title="前移小節"
-                              disabled={tabData.measures.findIndex(m => m.id === measure.id) === 0}
-                            >
-                              <span className="material-icons text-[18px]">arrow_back</span>
-                            </button>
-                            {/* Move Next */}
-                            <button
-                              onClick={() => {
-                                const idx = tabData.measures.findIndex(m => m.id === measure.id);
-                                if (idx < tabData.measures.length - 1) {
-                                  const newMeasures = [...tabData.measures];
-                                  const temp = newMeasures[idx + 1];
-                                  newMeasures[idx + 1] = newMeasures[idx];
-                                  newMeasures[idx] = temp;
-                                  saveToHistory({ ...tabData, measures: newMeasures });
-                                }
-                              }}
-                              className="p-2 rounded-full bg-zinc-50 hover:bg-indigo-100 text-indigo-400 hover:text-indigo-700 shadow transition-all disabled:opacity-30"
-                              title="後移小節"
-                              disabled={tabData.measures.findIndex(m => m.id === measure.id) === tabData.measures.length - 1}
-                            >
-                              <span className="material-icons text-[18px]">arrow_forward</span>
-                            </button>
-                            {/* Text Tab 按鈕 */}
-                            <button
-                              onClick={() => setActiveTextTab({ measureId: measure.id, text: measure.textTab || '' })}
-                              className="p-2 rounded-full bg-emerald-50 hover:bg-emerald-200 text-emerald-500 shadow transition-all"
-                              title="文字譜"
-                            >
-                              <span className="material-icons text-[18px]">edit_note</span>
-                            </button>
-                            {/* Copy */}
-                            <button
-                              onClick={() => {
-                                // 複製小節，產生新 id 並加到 measures 最後
-                                const maxId = tabData.measures.length > 0 ? Math.max(...tabData.measures.map(m => m.id)) : 0;
-                                const target = tabData.measures.find(m => m.id === measure.id);
-                                if (!target) return;
-                                // 深拷貝 notes
-                                const newMeasure = {
-                                  ...target,
-                                  id: maxId + 1,
-                                  notes: target.notes.map(n => ({ ...n })),
-                                };
-                                saveToHistory({
-                                  ...tabData,
-                                  measures: [...tabData.measures, newMeasure]
-                                });
-                              }}
-                              className="p-2 rounded-full bg-blue-50 hover:bg-blue-200 text-blue-500 shadow transition-all"
-                              title="複製小節"
-                            >
-                              <span className="material-icons text-[18px]">content_copy</span>
-                            </button>
-                            {/* Delete */}
-                            <button
-                              onClick={() => {
-                                saveToHistory({
-                                  ...tabData,
-                                  measures: tabData.measures.filter(m => m.id !== measure.id)
-                                });
-                              }}
-                              className="p-2 rounded-full bg-red-50 hover:bg-red-200 text-red-500 shadow transition-all"
-                              title="刪除小節"
-                            >
-                              <span className="material-icons text-[18px]">delete</span>
-                            </button>
-                          </div>
+                          <MeasureActions
+                            canMovePrev={tabData.measures.findIndex(m => m.id === measure.id) > 0}
+                            canMoveNext={tabData.measures.findIndex(m => m.id === measure.id) < tabData.measures.length - 1}
+                            onMovePrev={() => {
+                              const idx = tabData.measures.findIndex(m => m.id === measure.id);
+                              if (idx > 0) {
+                                const newMeasures = [...tabData.measures];
+                                const temp = newMeasures[idx - 1];
+                                newMeasures[idx - 1] = newMeasures[idx];
+                                newMeasures[idx] = temp;
+                                saveToHistory({ ...tabData, measures: newMeasures });
+                              }
+                            }}
+                            onMoveNext={() => {
+                              const idx = tabData.measures.findIndex(m => m.id === measure.id);
+                              if (idx < tabData.measures.length - 1) {
+                                const newMeasures = [...tabData.measures];
+                                const temp = newMeasures[idx + 1];
+                                newMeasures[idx + 1] = newMeasures[idx];
+                                newMeasures[idx] = temp;
+                                saveToHistory({ ...tabData, measures: newMeasures });
+                              }
+                            }}
+                            onTextTab={() => setActiveTextTab({ measureId: measure.id, text: measure.textTab || '' })}
+                            onCopy={() => {
+                              const maxId = tabData.measures.length > 0 ? Math.max(...tabData.measures.map(m => m.id)) : 0;
+                              const target = tabData.measures.find(m => m.id === measure.id);
+                              if (!target) return;
+                              const newMeasure = {
+                                ...target,
+                                id: maxId + 1,
+                                notes: target.notes.map(n => ({ ...n })),
+                              };
+                              saveToHistory({
+                                ...tabData,
+                                measures: [...tabData.measures, newMeasure]
+                              });
+                            }}
+                            onDelete={() => {
+                              saveToHistory({
+                                ...tabData,
+                                measures: tabData.measures.filter(m => m.id !== measure.id)
+                              });
+                            }}
+                          />
                         )}
                                           {/* 文字譜彈窗 */}
                                           {activeTextTab && activeTextTab.measureId === measure.id && (
