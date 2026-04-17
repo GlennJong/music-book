@@ -90,8 +90,8 @@ const BottomNav = ({ currentTab, onTabChange }: BottomNavProps) => {
           flex: 1
         }}
       >
-        <span className="material-icons" style={{ fontSize: '1.5em' }}>mic</span>
-        <span style={{ fontSize: '0.7em', marginTop: '4px' }}>Vocal</span>
+        <span className="material-icons" style={{ fontSize: '1.5em' }}>library_music</span>
+        <span style={{ fontSize: '0.7em', marginTop: '4px' }}>Tab</span>
       </button>
     </div>
   );

@@ -1,15 +1,13 @@
 import type { TabData } from './index';
 
 export const INITIAL_TAB_DATA: TabData = {
-  metadata: {
-    title: "Nothing's Gonna Change My Love for You",
-    artist: "Glenn Medeiros",
-    key: "C",
-    bpm: 80,
-    subdivisions: 4,
-    capo: 0,
-    tuningName: 'standard'
-  },
+  title: "Nothing's Gonna Change My Love for You",
+  artist: "Glenn Medeiros",
+  key: "C",
+  bpm: 80,
+  subdivisions: 4,
+  capo: 0,
+  tuningName: 'standard',
   measures: [
     { id: 1, chord: "C", lyrics: "If I had to live my life", notes: [] },
     { id: 2, chord: "G/B", lyrics: "without you", notes: [] },

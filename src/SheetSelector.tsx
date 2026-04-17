@@ -25,7 +25,10 @@ const CreateSheetBox = ({ createSheet, fetchFiles, onCreate }: CreateSheetBoxPro
           { name: 'artist', type: 'string' },
           { name: 'key', type: 'string' },
           { name: 'bpm', type: 'number' },
-          { name: 'data', type: 'string' },
+          { name: 'subdivisions', type: 'number' },
+          { name: 'capo', type: 'number' },
+          { name: 'tuningName', type: 'string' },
+          { name: 'measures', type: 'string' }, // measures 存為 JSON 字串
         ]
       })
       await fetchFiles('musicbook-');
@@ -216,9 +219,9 @@ const SheetSelector = ({ token, onSelect }: { token: string, onSelect: (endpoint
             isNew={newCreationSheetName.some((sheetName) => file.name.includes(sheetName))}
             key={file.id}
             file={file}
-            onSelect={() => {
-              if (file.scriptUrl) {
-                handleStoreEndpoint(file.scriptUrl);
+            onSelect={(scriptUrl) => {
+              if (scriptUrl) {
+                handleStoreEndpoint(scriptUrl);
               }
             }} />
         )}

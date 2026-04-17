@@ -1,25 +1,69 @@
 import { useState } from 'react';
 import { type DriveFile } from '@glennjong/vibe-sheets';
+// import { fetchScript } from '../common/fetch';
 
 // import type { TabData } from '../screen/TabScreen/index';
+
+// import type { Data, RawData } from '../types';
+
+interface RawData {
+
+}
+
+interface Data  {
+}
+
+// eslint-disable-next-line react-refresh/only-export-components
+export const fetchScript = async (url: string, method: 'GET' | 'POST' = 'GET', body?: unknown): Promise<Data[]> => {
+  const options: RequestInit = { method };
+  if (method === 'POST' && body) options.body = JSON.stringify(body);
+  const res = await fetch(url, options);
+  const json = await res.json();
+  
+  // Safety check: ensure data exists and is an array
+  const data: RawData[] = Array.isArray(json.data) ? json.data : [];
+  
+  return data.map((item: RawData) => ({ 
+    ...item
+  }));
+};
 
 const FileItem = ({ isNew, file, onSelect }: { isNew: boolean, file: DriveFile, onSelect: (scriptUrl: string) => void }) => {
   const [ isFetching, setIsFetching ] = useState(false);
   const [ isAccessed, setIsAccessed ] = useState<boolean | undefined>(!isNew);
 
   const handleSelect = async () => {
+    console.log(file.scriptUrl)
     try {
-      if (file.scriptUrl) {
-        setIsFetching(true);
-        setIsAccessed(true);
-        onSelect(file.scriptUrl);
-        setIsFetching(false);
+      if (file.description) {
+        if (file.scriptUrl) {
+          setIsFetching(true);
+          await fetchScript(file.scriptUrl);
+          setIsAccessed(true);
+          onSelect(file.scriptUrl);
+          setIsFetching(false);
+        }
       }
     } catch (e) {
       console.error("Invalid file description", e);
       setIsAccessed(false);
       setIsFetching(false);
     }
+  };
+
+  // 輪詢檢查 scriptUrl 是否可用
+  const pollAccess = () => {
+    let count = 0;
+    const maxTries = 10;
+    const interval = setInterval(() => {
+      // 這裡可根據實際情境改為 fetch 或 token 驗證
+      if (file.scriptUrl) {
+        setIsAccessed(true);
+        clearInterval(interval);
+      } else if (++count >= maxTries) {
+        clearInterval(interval);
+      }
+    }, 800);
   };
 
   return (
@@ -99,7 +143,7 @@ const FileItem = ({ isNew, file, onSelect }: { isNew: boolean, file: DriveFile, 
               onClick={() => {
                 const scriptUrl = file.scriptUrl;
                 window.open(scriptUrl, 'auth', 'width=600,height=400');
-                setIsAccessed(true);
+                pollAccess();
               }}
               style={{
                 width: '100%',

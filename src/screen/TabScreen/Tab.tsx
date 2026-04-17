@@ -1,22 +1,10 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import MeasureActions from './components/MeasureActions';
-// ...existing code...
 
 import * as Tone from 'tone';
 import { chordInfo } from './chordInfo';
 import { tuningInfo } from './tuningInfo';
 
-// --- 型別定義 ---
-
-interface Metadata {
-  title: string;
-  artist: string;
-  key: string;
-  bpm: number;
-  subdivisions: number;
-  capo: number;
-  tuningName: string;
-}
 
 interface Note {
   string: number;
@@ -34,7 +22,13 @@ interface Measure {
 
 
 interface TabData {
-  metadata: Metadata;
+  title: string;
+  artist: string;
+  key: string;
+  bpm: number;
+  subdivisions: number;
+  capo: number;
+  tuningName: string;
   measures: Measure[];
 }
 
@@ -247,7 +241,7 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
     const newMeasures = tabData.measures.map(m => {
       if (m.id === measureId) {
         // 解析文字譜
-        const notes = parseTextTabToNotes(text, tabData.metadata.subdivisions);
+        const notes = parseTextTabToNotes(text, tabData.subdivisions);
         return { ...m, textTab: text, notes };
       }
       return m;
@@ -270,7 +264,7 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
     if (!targetMeasure) return;
 
     let nextEmptyBeat = -1;
-    for (let b = currentBeat + 1; b < tabData.metadata.subdivisions; b++) {
+    for (let b = currentBeat + 1; b < tabData.subdivisions; b++) {
       if (!targetMeasure.notes.some(n => n.beat === b)) {
         nextEmptyBeat = b;
         break;
@@ -360,7 +354,7 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
   };
 
   const filteredChords = useMemo(() => {
-    if (!chordFilter) return (THEORY_CHORDS[tabData.metadata.key] || CHORD_POOL).slice(0, 15);
+    if (!chordFilter) return (THEORY_CHORDS[tabData.key] || CHORD_POOL).slice(0, 15);
     
     const filter = chordFilter.toLowerCase();
     return CHORD_POOL
@@ -375,7 +369,7 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
         return a.length - b.length;
       })
       .slice(0, 15);
-  }, [chordFilter, tabData.metadata.key]);
+  }, [chordFilter, tabData.key]);
 
   // 支援從指定 measure index 播放
   const playTab = async (startMeasureIdx?: number) => {
@@ -390,7 +384,7 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
 
     await Tone.start();
     setIsPlaying(true);
-    Tone.Transport.bpm.value = tabData.metadata.bpm;
+    Tone.Transport.bpm.value = tabData.bpm;
     Tone.Transport.cancel();
 
     // 只排程從 startMeasureIdx 開始的小節
@@ -399,8 +393,8 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
       if (measure.notes.length === 0 && measure.chord) {
         // Play the chord as a block chord for each subdivision
         const chordNotes = parseChordNotes(measure.chord);
-        for (let b = 0; b < tabData.metadata.subdivisions; b++) {
-          const time = `${relIdx}:${(b * 4) / tabData.metadata.subdivisions}`;
+        for (let b = 0; b < tabData.subdivisions; b++) {
+          const time = `${relIdx}:${(b * 4) / tabData.subdivisions}`;
           Tone.Transport.schedule((t) => {
             if (synth.current) {
               // Play all chord notes as a block chord
@@ -416,7 +410,7 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
         }
       } else {
         measure.notes.forEach((note) => {
-          const time = `${relIdx}:${(note.beat * 4) / tabData.metadata.subdivisions}`;
+          const time = `${relIdx}:${(note.beat * 4) / tabData.subdivisions}`;
           Tone.Transport.schedule((t) => {
             if (synth.current) {
               const midiNote = getNoteMidi(note.string, note.fret);
@@ -456,19 +450,19 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
               {isEditMode ? (
                 <input
                   className="text-xl font-black tracking-tight uppercase bg-transparent border-b-2 border-indigo-100 focus:border-indigo-400 outline-none w-full mb-1"
-                  value={tabData.metadata.title}
-                  onChange={e => setTabData({ ...tabData, metadata: { ...tabData.metadata, title: e.target.value } })}
+                  value={tabData.title}
+                  onChange={e => setTabData({ ...tabData, title: e.target.value })}
                   placeholder="請輸入標題"
                   aria-label="樂譜標題"
                   maxLength={64}
                 />
               ) : (
-                <h3 className="text-xl font-black tracking-tight uppercase">{tabData.metadata.title}</h3>
+                <h3 className="text-xl font-black tracking-tight uppercase">{tabData.title}</h3>
               )}
               <div className="flex gap-3 text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-0.5">
-                <span>{tabData.metadata.key}</span>
+                <span>{tabData.key}</span>
                 <span>•</span>
-                <span>{tabData.metadata.bpm} BPM</span>
+                <span>{tabData.bpm} BPM</span>
               </div>
             </div>
           </div>
@@ -501,9 +495,9 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
                   {[4, 8, 16].map(num => (
                     <button
                       key={num}
-                      onClick={() => isEditMode && saveToHistory({...tabData, metadata: {...tabData.metadata, subdivisions: num}})}
+                      onClick={() => isEditMode && saveToHistory({...tabData, subdivisions: num})}
                       disabled={!isEditMode}
-                      className={`px-4 py-2 rounded-xl font-bold text-sm transition-all ${tabData.metadata.subdivisions === num ? 'bg-zinc-900 text-white shadow-lg' : 'bg-zinc-100 text-zinc-400'} ${!isEditMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-zinc-200'}`}
+                      className={`px-4 py-2 rounded-xl font-bold text-sm transition-all ${tabData.subdivisions === num ? 'bg-zinc-900 text-white shadow-lg' : 'bg-zinc-100 text-zinc-400'} ${!isEditMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-zinc-200'}`}
                     >
                       {num}
                     </button>
@@ -514,7 +508,7 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
               <div className="flex flex-col gap-3">
                 <label className="text-[10px] font-black uppercase text-zinc-400 tracking-widest px-1">調性 (Key)</label>
                 <div className="flex gap-2 items-center font-black text-indigo-600 text-lg">
-                  <span className="px-4 py-2 rounded-xl bg-indigo-50 border border-indigo-100 uppercase">{tabData.metadata.key} 調</span>
+                  <span className="px-4 py-2 rounded-xl bg-indigo-50 border border-indigo-100 uppercase">{tabData.key} 調</span>
                 </div>
               </div>
               <div className="h-10 w-px bg-zinc-100 hidden md:block"></div>
@@ -546,7 +540,7 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
                       measures: [newMeasure, ...tabData.measures]
                     });
                   }}
-                  className="w-full mb-8 py-4 border-4 border-dashed border-indigo-200 rounded-[2rem] flex flex-col items-center justify-center gap-2 text-indigo-400 hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50/50 transition-all group"
+                  className="w-full mb-8 py-4 border-4 border-dashed border-indigo-200 rounded-4xl flex flex-col items-center justify-center gap-2 text-indigo-400 hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50/50 transition-all group"
                 >
                   <span className="material-icons text-[28px] group-hover:rotate-180 transition-transform duration-700">add</span>
                   <span className="font-black uppercase tracking-[0.2em] text-sm">新增小節（最前面）</span>
@@ -720,20 +714,20 @@ E |  |  |  |  |`
                         <div 
                             className={`relative min-h-56 grid gap-0`}
                             style={{ 
-                              gridTemplateColumns: `repeat(${tabData.metadata.subdivisions}, 1fr)` 
+                              gridTemplateColumns: `repeat(${tabData.subdivisions}, 1fr)` 
                             }}
                           >
                           <div className="absolute inset-0 flex flex-col justify-between py-6 pointer-events-none">
                             {[...Array(6)].map((_, i) => (
                               <div key={i} className="relative w-full h-px bg-zinc-100">
                                 <span className="absolute -left-16 -top-2.5 text-[10px] font-black text-zinc-400 w-12 text-right uppercase tracking-tighter">
-                                  {tuningInfo[tabData.metadata.tuningName]?.[i] ?? ''}
+                                  {tuningInfo[tabData.tuningName]?.[i] ?? ''}
                                 </span>
                               </div>
                             ))}
                           </div>
 
-                          {[...Array(tabData.metadata.subdivisions)].map((_, b) => {
+                          {[...Array(tabData.subdivisions)].map((_, b) => {
                             const notesInColumn = measure.notes.filter(n => n.beat === b);
                             
                             return (
@@ -813,10 +807,10 @@ E |  |  |  |  |`
                                   );
                                 })}
 
-                                {isEditMode && notesInColumn.length > 0 && b < tabData.metadata.subdivisions - 1 && (
+                                {isEditMode && notesInColumn.length > 0 && b < tabData.subdivisions - 1 && (
                                   <button 
                                     onClick={() => duplicateToNextEmpty(measure.id, b)}
-                                    className={`absolute -bottom-12 left-1/2 -translate-x-1/2 p-2 rounded-xl transition-all opacity-0 group-hover/col:opacity-100 shadow-sm flex items-center ${measure.notes.some(n => n.beat > b && n.beat < tabData.metadata.subdivisions) ? 'text-zinc-200 bg-zinc-50' : 'text-indigo-600 bg-indigo-50 hover:bg-indigo-100'}`}
+                                    className={`absolute -bottom-12 left-1/2 -translate-x-1/2 p-2 rounded-xl transition-all opacity-0 group-hover/col:opacity-100 shadow-sm flex items-center ${measure.notes.some(n => n.beat > b && n.beat < tabData.subdivisions) ? 'text-zinc-200 bg-zinc-50' : 'text-indigo-600 bg-indigo-50 hover:bg-indigo-100'}`}
                                     title="複製到下一個空格"
                                   >
                                     <span className="material-icons text-[14px]">content_copy</span>

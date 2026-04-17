@@ -1,37 +1,15 @@
-import React, { useState, useEffect } from 'react';
+
+import React from 'react';
 import type { TabData } from './index';
 
-
 interface ManagementProps {
+  tabList: TabData[];
   onSelect: (data: TabData) => void;
+  onDelete: (idx: number) => void;
+  reloadTabList?: () => void;
 }
 
-const STORAGE_KEY = 'tabdata_list';
-
-const Management: React.FC<ManagementProps> = ({ onSelect }) => {
-  const [tabList, setTabList] = useState<TabData[]>([]);
-
-  useEffect(() => {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    let arr: TabData[] = [];
-    if (raw) {
-      try {
-        arr = JSON.parse(raw);
-      } catch {
-        arr = [];
-      }
-    }
-    // 避免同步 setState，改為 effect 外部計算
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setTabList(Array.isArray(arr) ? arr : []);
-  }, []);
-
-  const handleDelete = (idx: number) => {
-    const newList = tabList.filter((_, i) => i !== idx);
-    setTabList(newList);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newList));
-  };
-
+const Management: React.FC<ManagementProps> = ({ tabList, onSelect, onDelete, reloadTabList }) => {
   return (
     <div className="p-8 max-w-3xl mx-auto">
       <h2 className="text-2xl font-black mb-8">已儲存的樂譜列表</h2>
@@ -42,8 +20,8 @@ const Management: React.FC<ManagementProps> = ({ onSelect }) => {
           {tabList.map((tab, idx) => (
             <li key={idx} className="bg-white rounded-2xl shadow p-6 flex items-center justify-between">
               <div>
-                <div className="font-bold text-lg">{tab.metadata.title}</div>
-                <div className="text-zinc-500 text-sm">{tab.metadata.artist} | {tab.metadata.key} | {tab.metadata.bpm} BPM</div>
+                <div className="font-bold text-lg">{tab.title}</div>
+                <div className="text-zinc-500 text-sm">{tab.artist} | {tab.key} | {tab.bpm} BPM</div>
               </div>
               <div className="flex gap-2">
                 <button
@@ -54,7 +32,10 @@ const Management: React.FC<ManagementProps> = ({ onSelect }) => {
                 </button>
                 <button
                   className="px-4 py-2 rounded-xl bg-red-100 text-red-500 font-bold hover:bg-red-200"
-                  onClick={() => handleDelete(idx)}
+                  onClick={() => {
+                    onDelete(idx);
+                    if (reloadTabList) reloadTabList();
+                  }}
                 >
                   刪除
                 </button>

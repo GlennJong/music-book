@@ -51,7 +51,7 @@ const Play: React.FC<PlayProps> = ({ tabData }) => {
   }
 
   // 歌曲資訊
-  const { title, artist, key, bpm, capo } = tabData.metadata;
+  const { title, artist, key, bpm, capo, subdivisions, tuningName } = tabData;
 
   return (
     <div className="tab-play-container" style={{ fontSize: 13, padding: 8 }}>
@@ -99,9 +99,9 @@ const Play: React.FC<PlayProps> = ({ tabData }) => {
                     <pre style={{ fontFamily: 'monospace', fontSize: 11, margin: 0, background: '#f8fafc', padding: 6, borderRadius: 6, overflowX: 'auto' }}>
                       {renderTablature(
                         m,
-                        tabData.metadata.subdivisions,
+                        subdivisions,
                         (() => {
-                          const t = tuningInfo[tabData.metadata.tuningName];
+                          const t = tuningInfo[tuningName];
                           return Array.isArray(t) && t.length === 6 ? t : tuningInfo['standard'];
                         })()
                       ).join('\n')}

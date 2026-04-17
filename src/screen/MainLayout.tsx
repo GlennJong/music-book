@@ -6,10 +6,10 @@ const LearnScreen = lazy(() => import("./LearnScreen"));
 const TabScreen = lazy(() => import("./TabScreen"));
 const VocalScreen = lazy(() => import("./VocalScreen"));
 
-export type Tab = 'try' | 'learn' | 'vocal' | 'tab';
+export type Tab = 'try' | 'learn' | 'vocal' | 'tab' | 'setup';
 
 const MainLayout = () => {
-  const [currentTab, setCurrentTab] = useState<Tab>('learn');
+  const [currentTab, setCurrentTab] = useState<Tab>('try');
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
