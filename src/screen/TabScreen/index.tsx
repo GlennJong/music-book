@@ -299,7 +299,7 @@ const TabScreen: React.FC = () => {
     const newMeasures = tabData.measures.map(m => {
       if (m.id === measureId) {
         const existingNoteIdx = m.notes.findIndex(n => n.string === string && n.beat === beat);
-        let newNotes = [...m.notes];
+        const newNotes = [...m.notes];
         if (fret === null) {
           if (existingNoteIdx > -1) newNotes.splice(existingNoteIdx, 1);
         } else {
@@ -446,7 +446,7 @@ const TabScreen: React.FC = () => {
                   {activeChordPicker === measure.id && (
                     <>
                       <div className="fixed inset-0 z-40 bg-zinc-950/5 backdrop-blur-[2px]" onClick={() => {setActiveChordPicker(null); setChordFilter('');}} />
-                      <div className="absolute inset-x-0 -top-8 z-50 bg-white/95 backdrop-blur-md rounded-3xl p-10 border-2 border-indigo-500 shadow-2xl flex flex-col animate-in fade-in zoom-in duration-200 max-h-[420px]">
+                      <div className="absolute inset-x-0 -top-8 z-50 bg-white/95 backdrop-blur-md rounded-3xl p-10 border-2 border-indigo-500 shadow-2xl flex flex-col animate-in fade-in zoom-in duration-200 max-h-105">
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                           <div className="flex items-center gap-4 w-full sm:w-auto">
                             <h3 className="font-black text-2xl uppercase tracking-tighter shrink-0">變更和弦</h3>
@@ -497,16 +497,16 @@ const TabScreen: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className={`relative bg-white border-2 rounded-[3.5rem] p-12 transition-all ${currentMeasure === measure.id ? 'border-indigo-500 shadow-indigo-100 bg-indigo-50/10 ring-[14px] ring-indigo-50' : 'border-zinc-100'} ${isEditMode ? 'border-dashed border-amber-200' : ''}`}>
+                  <div className={`relative bg-white border-2 rounded-[3.5rem] p-12 transition-all ${currentMeasure === measure.id ? 'border-indigo-500 shadow-indigo-100 bg-indigo-50/10 ring-14 ring-indigo-50' : 'border-zinc-100'} ${isEditMode ? 'border-dashed border-amber-200' : ''}`}>
                     <div 
-                      className="relative min-h-[14rem] grid gap-0"
-                      style={{ 
-                        gridTemplateColumns: `repeat(${tabData.metadata.subdivisions}, 1fr)` 
-                      }}
-                    >
+                        className={`relative min-h-56 grid gap-0`}
+                        style={{ 
+                          gridTemplateColumns: `repeat(${tabData.metadata.subdivisions}, 1fr)` 
+                        }}
+                      >
                       <div className="absolute inset-0 flex flex-col justify-between py-6 pointer-events-none">
                         {[...Array(6)].map((_, i) => (
-                          <div key={i} className="relative w-full h-[1px] bg-zinc-100">
+                          <div key={i} className="relative w-full h-px bg-zinc-100">
                             <span className="absolute -left-16 -top-2.5 text-[10px] font-black text-zinc-400 w-12 text-right uppercase tracking-tighter">
                               {tabData.metadata.tuning[i]}
                             </span>
@@ -543,7 +543,7 @@ const TabScreen: React.FC = () => {
                                     <button 
                                       disabled={!isEditMode}
                                       onClick={() => handleGridClick(measure.id, stringNum, b)}
-                                      className={`group/note relative z-10 w-12 h-12 rounded-[1.25rem] flex items-center justify-center font-mono font-bold text-sm shadow-xl transition-all ${isNoteActive ? 'bg-indigo-600 text-white scale-110 ring-[8px] ring-indigo-100' : 'bg-zinc-900 text-white shadow-zinc-200'} ${isEditMode ? 'hover:scale-110 active:scale-95' : 'cursor-default'}`}
+                                      className={`group/note relative z-10 w-12 h-12 rounded-[1.25rem] flex items-center justify-center font-mono font-bold text-sm shadow-xl transition-all ${isNoteActive ? 'bg-indigo-600 text-white scale-110 ring-8 ring-indigo-100' : 'bg-zinc-900 text-white shadow-zinc-200'} ${isEditMode ? 'hover:scale-110 active:scale-95' : 'cursor-default'}`}
                                     >
                                       {note.fret}
                                     </button>
@@ -561,8 +561,8 @@ const TabScreen: React.FC = () => {
                                   {/* 指法選擇彈窗 */}
                                   {isPicking && (
                                     <>
-                                      <div className="fixed inset-0 z-[55] bg-transparent" onClick={() => setActiveFretPicker(null)} />
-                                      <div className="absolute bottom-16 z-[60] bg-white border border-zinc-200 rounded-[2.5rem] shadow-2xl p-7 w-72 animate-in slide-in-from-bottom-6 duration-300 ring-1 ring-black/5">
+                                      <div className="fixed inset-0 z-55 bg-transparent" onClick={() => setActiveFretPicker(null)} />
+                                      <div className="absolute bottom-16 z-60 bg-white border border-zinc-200 rounded-[2.5rem] shadow-2xl p-7 w-72 animate-in slide-in-from-bottom-6 duration-300 ring-1 ring-black/5">
                                         <div className="flex justify-between items-center mb-5">
                                           <span className="text-[10px] font-black uppercase text-zinc-400 tracking-[0.2em] px-1">Fret Selection</span>
                                           <button onClick={() => setActiveFretPicker(null)} className="text-zinc-300 hover:text-zinc-500 flex items-center">
@@ -618,7 +618,7 @@ const TabScreen: React.FC = () => {
                         value={measure.lyrics || ""}
                         onChange={(e) => updateLyrics(measure.id, e.target.value)}
                         placeholder={isEditMode ? "在這裡輸入歌詞..." : ""}
-                        className={`w-full bg-zinc-50/50 rounded-2xl p-5 text-sm font-medium transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[80px] resize-none ${!isEditMode && "bg-transparent text-zinc-500 px-0"}`}
+                        className={`w-full bg-zinc-50/50 rounded-2xl p-5 text-sm font-medium transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-20 resize-none ${!isEditMode && "bg-transparent text-zinc-500 px-0"}`}
                       />
                     </div>
                   </div>
@@ -638,7 +638,7 @@ const TabScreen: React.FC = () => {
           </div>
         ) : (
           <div className="bg-zinc-900 p-12 rounded-[3.5rem] shadow-2xl border border-zinc-800 animate-in slide-in-from-bottom-8">
-            <pre className="text-indigo-300 font-mono text-[13px] leading-loose overflow-auto max-h-[800px]">
+            <pre className="text-indigo-300 font-mono text-[13px] leading-loose overflow-auto max-h-200">
               {JSON.stringify(tabData, null, 2)}
             </pre>
           </div>
@@ -646,10 +646,10 @@ const TabScreen: React.FC = () => {
       </main>
 
       <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 flex items-center gap-6">
-        <div className="bg-white/95 backdrop-blur-3xl px-12 py-7 rounded-[3.5rem] shadow-2xl border border-zinc-200/50 flex items-center gap-12 ring-1 ring-zinc-900/10">
+        <div className="bg-white/95 backdrop-blur-3xl px-12 py-7 rounded-4xl shadow-2xl border border-zinc-200/50 flex items-center gap-12 ring-1 ring-zinc-900/10">
           <button 
             onClick={() => { if(isPlaying) playTab(); setIsEditMode(!isEditMode); }}
-            className={`flex items-center gap-5 px-10 py-5 rounded-[2rem] font-black text-sm tracking-[0.2em] transition-all active:scale-95 ${isEditMode ? 'bg-amber-100 text-amber-800 ring-2 ring-amber-200 shadow-xl shadow-amber-100' : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200'}`}
+            className={`flex items-center gap-5 px-10 py-5 rounded-4xl font-black text-sm tracking-[0.2em] transition-all active:scale-95 ${isEditMode ? 'bg-amber-100 text-amber-800 ring-2 ring-amber-200 shadow-xl shadow-amber-100' : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200'}`}
           >
             <span className="material-icons text-[22px]">{isEditMode ? 'check' : 'layers'}</span>
             {isEditMode ? "FINISH" : "EDIT"}
@@ -671,7 +671,7 @@ const TabScreen: React.FC = () => {
               <span className="material-icons text-[14px]">check_circle</span>
               <span className="text-[10px] font-black uppercase tracking-[0.2em] leading-none">Ready to Sync</span>
             </div>
-            <p className="text-[10px] text-zinc-400 font-mono uppercase tracking-[0.1em]">History: {history.past.length} Steps</p>
+            <p className="text-[10px] text-zinc-400 font-mono uppercase tracking-widest">History: {history.past.length} Steps</p>
           </div>
         </div>
       </div>
