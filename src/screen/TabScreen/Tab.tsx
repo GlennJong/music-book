@@ -1,5 +1,9 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+// ...existing code...
+
 import * as Tone from 'tone';
+import { chordInfo } from './chordInfo';
+import { tuningInfo } from './tuningInfo';
 
 // --- 型別定義 ---
 
@@ -10,7 +14,7 @@ interface Metadata {
   bpm: number;
   subdivisions: number;
   capo: number;
-  tuning: string[];
+  tuningName: string;
 }
 
 interface Note {
@@ -24,16 +28,12 @@ interface Measure {
   chord: string;
   lyrics: string;
   notes: Note[];
+  textTab?: string;
 }
 
-interface ChordInfo {
-  frets: (number | null)[];
-  theory: string;
-}
 
 interface TabData {
   metadata: Metadata;
-  chordLib: Record<string, ChordInfo>;
   measures: Measure[];
 }
 
@@ -105,10 +105,20 @@ interface TabProps {
 }
 
 const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
-  const [measuresPerRow, setMeasuresPerRow] = useState<number>(4);
+  const [measuresPerRow, setMeasuresPerRow] = useState<number>(2);
   const [history, setHistory] = useState<HistoryState>({ past: [], future: [] });
-  const [viewMode, setViewMode] = useState<'render' | 'data'>('render');
   const [isEditMode, setIsEditMode] = useState<boolean>(false);
+
+  // State for JSON editing
+  const [jsonEditValue, setJsonEditValue] = useState("");
+
+  // Sync jsonEditValue with tabData when switching to JSON view
+  useEffect(() => {
+    if (!isEditMode) {
+      setJsonEditValue(JSON.stringify(tabData, null, 2));
+    }
+  }, [isEditMode, tabData]);
+  const [viewMode, setViewMode] = useState<'render' | 'data'>('render');
   const [activeChordPicker, setActiveChordPicker] = useState<number | null>(null);
   const [activeFretPicker, setActiveFretPicker] = useState<ActiveFretPicker | null>(null); 
   const [chordFilter, setChordFilter] = useState<string>('');
@@ -116,6 +126,9 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [currentMeasure, setCurrentMeasure] = useState<number | null>(null);
   const [currentBeat, setCurrentBeat] = useState<number | null>(null);
+
+  // 文字譜彈窗狀態
+  const [activeTextTab, setActiveTextTab] = useState<null | { measureId: number; text: string }>(null);
   
   const synth = useRef<Tone.PolySynth | null>(null);
   const reverb = useRef<Tone.Reverb | null>(null);
@@ -199,6 +212,48 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
     saveToHistory({ ...tabData, measures: newMeasures });
   };
 
+  // 文字譜內容儲存
+  // 解析文字譜並同步 notes
+  const parseTextTabToNotes = (text: string, subdivisions: number) => {
+    // 支援格式：E |  |  |  | 3|
+    // 回傳 notes: Note[]
+    const lines = text.split(/\r?\n/).map(l => l.trim());
+    const stringMap = { 'E': 1, 'B': 2, 'G': 3, 'D': 4, 'A': 5, 'e': 6 };
+    // 也支援小寫 e 當 6 弦
+    const notes: Note[] = [];
+    lines.forEach(line => {
+      // 只處理有 | 的行
+      if (!line.includes('|')) return;
+      // 取弦名
+      const m = line.match(/^(E|B|G|D|A|e)\s*\|(.+)$/);
+      if (!m) return;
+      const stringName = m[1];
+      const stringNum = stringName === 'e' ? 6 : stringMap[stringName];
+      if (!stringNum) return;
+      // 取每格
+      const cells = m[2].split('|').map(c => c.trim());
+      cells.forEach((cell, idx) => {
+        if (cell !== '' && !isNaN(Number(cell))) {
+          notes.push({ string: stringNum, fret: Number(cell), beat: idx });
+        }
+      });
+    });
+    // 過濾超出 subdivisions 的 beat
+    return notes.filter(n => n.beat < subdivisions);
+  };
+
+  const updateTextTab = (measureId: number, text: string) => {
+    const newMeasures = tabData.measures.map(m => {
+      if (m.id === measureId) {
+        // 解析文字譜
+        const notes = parseTextTabToNotes(text, tabData.metadata.subdivisions);
+        return { ...m, textTab: text, notes };
+      }
+      return m;
+    });
+    saveToHistory({ ...tabData, measures: newMeasures });
+  };
+
   const clearColumn = (measureId: number, beat: number) => {
     const newMeasures = tabData.measures.map(m => {
       if (m.id === measureId) {
@@ -242,8 +297,9 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
     if (existingNote) {
       setActiveFretPicker({ measureId, string: stringNum, beat });
     } else {
-      const chordInfo = tabData.chordLib[measure.chord];
-      const recommendedFret = chordInfo ? chordInfo.frets[6 - stringNum] : 0;
+
+      const currentChordInfo = chordInfo[measure.chord];
+      const recommendedFret = currentChordInfo ? currentChordInfo.frets[stringNum - 1] : 0;
       const fretToAdd = recommendedFret !== null ? recommendedFret : 0;
 
       const newMeasures = tabData.measures.map(m => {
@@ -257,19 +313,19 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
   };
 
   const setChordAndNotes = (measureId: number, newChordName: string) => {
-    const newChordInfo = tabData.chordLib[newChordName];
+    const newChordInfo = chordInfo[newChordName];
     const newMeasures = tabData.measures.map(m => {
       if (m.id === measureId) {
         if (m.notes.length === 0 && newChordInfo) {
+          // frets[0] = 1弦, frets[5] = 6弦
           const baseNotes = newChordInfo.frets
-            .map((fret, idx) => fret !== null ? { string: 6 - idx, fret: fret, beat: 0 } : null)
-            .filter((n): n is Note => n !== null);
+            .map((fret: number | null, idx: number) => fret !== null ? { string: idx + 1, fret: fret, beat: 0 } : null)
+            .filter((n: Note | null): n is Note => n !== null);
           return { ...m, chord: newChordName, notes: baseNotes };
         }
         if (newChordInfo) {
           const updatedNotes = m.notes.map(note => {
-            const stringIdx = 6 - note.string;
-            const targetFret = newChordInfo.frets[stringIdx];
+            const targetFret = newChordInfo.frets[note.string - 1];
             return { ...note, fret: targetFret !== null ? targetFret : note.fret };
           });
           return { ...m, chord: newChordName, notes: updatedNotes };
@@ -320,7 +376,8 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
       .slice(0, 15);
   }, [chordFilter, tabData.metadata.key]);
 
-  const playTab = async () => {
+  // 支援從指定 measure index 播放
+  const playTab = async (startMeasureIdx?: number) => {
     if (isPlaying) { 
       Tone.Transport.stop(); 
       Tone.Transport.cancel(); 
@@ -335,12 +392,14 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
     Tone.Transport.bpm.value = tabData.metadata.bpm;
     Tone.Transport.cancel();
 
-    tabData.measures.forEach((measure, mIdx) => {
+    // 只排程從 startMeasureIdx 開始的小節
+    const startIdx = typeof startMeasureIdx === 'number' ? startMeasureIdx : 0;
+    tabData.measures.slice(startIdx).forEach((measure, relIdx) => {
       if (measure.notes.length === 0 && measure.chord) {
         // Play the chord as a block chord for each subdivision
         const chordNotes = parseChordNotes(measure.chord);
         for (let b = 0; b < tabData.metadata.subdivisions; b++) {
-          const time = `${mIdx}:${(b * 4) / tabData.metadata.subdivisions}`;
+          const time = `${relIdx}:${(b * 4) / tabData.metadata.subdivisions}`;
           Tone.Transport.schedule((t) => {
             if (synth.current) {
               // Play all chord notes as a block chord
@@ -356,7 +415,7 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
         }
       } else {
         measure.notes.forEach((note) => {
-          const time = `${mIdx}:${(note.beat * 4) / tabData.metadata.subdivisions}`;
+          const time = `${relIdx}:${(note.beat * 4) / tabData.metadata.subdivisions}`;
           Tone.Transport.schedule((t) => {
             if (synth.current) {
               const midiNote = getNoteMidi(note.string, note.fret);
@@ -378,7 +437,7 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
         setCurrentMeasure(null); 
         Tone.Transport.stop(); 
       }, Tone.now());
-    }, `${tabData.measures.length}:0`);
+    }, `${tabData.measures.length - startIdx}:0`);
 
     Tone.Transport.start();
   };
@@ -430,7 +489,7 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto p-6 md:p-10 pb-56">
+      <main className="pt-4 pb-56">
         {viewMode === 'render' ? (
           <div className="space-y-16">
             {/* 參數控制 */}
@@ -452,16 +511,16 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
               </div>
               <div className="h-10 w-px bg-zinc-100 hidden md:block"></div>
               <div className="flex flex-col gap-3">
-                <label className="text-[10px] font-black uppercase text-zinc-400 tracking-widest px-1">調弦 (Tuning)</label>
-                <div className="flex gap-2 font-mono font-bold text-indigo-600">
-                  {tabData.metadata.tuning.map((t, i) => <span key={i} className="w-6 h-8 bg-indigo-50 flex items-center justify-center rounded-lg border border-indigo-100 uppercase">{t}</span>)}
+                <label className="text-[10px] font-black uppercase text-zinc-400 tracking-widest px-1">調性 (Key)</label>
+                <div className="flex gap-2 items-center font-black text-indigo-600 text-lg">
+                  <span className="px-4 py-2 rounded-xl bg-indigo-50 border border-indigo-100 uppercase">{tabData.metadata.key} 調</span>
                 </div>
               </div>
               <div className="h-10 w-px bg-zinc-100 hidden md:block"></div>
               <div className="flex flex-col gap-3">
                 <label className="text-[10px] font-black uppercase text-zinc-400 tracking-widest px-1">每列顯示小節數</label>
                 <div className="flex items-center gap-2">
-                  {[1, 2].map(num => (
+                  {[1, 2, 3, 4].map(num => (
                     <button
                       key={num}
                       onClick={() => setMeasuresPerRow(num)}
@@ -483,6 +542,130 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
                   <div key={rowIdx} className="flex gap-8 flex-wrap">
                     {rowMeasures.map((measure) => (
                       <div key={measure.id} className="relative flex-1 min-w-[320px]">
+                        {isEditMode && (
+                          <div className="absolute top-2 right-2 z-20 flex gap-2">
+                            {/* Move Prev */}
+                            <button
+                              onClick={() => {
+                                const idx = tabData.measures.findIndex(m => m.id === measure.id);
+                                if (idx > 0) {
+                                  const newMeasures = [...tabData.measures];
+                                  const temp = newMeasures[idx - 1];
+                                  newMeasures[idx - 1] = newMeasures[idx];
+                                  newMeasures[idx] = temp;
+                                  saveToHistory({ ...tabData, measures: newMeasures });
+                                }
+                              }}
+                              className="p-2 rounded-full bg-zinc-50 hover:bg-indigo-100 text-indigo-400 hover:text-indigo-700 shadow transition-all disabled:opacity-30"
+                              title="前移小節"
+                              disabled={tabData.measures.findIndex(m => m.id === measure.id) === 0}
+                            >
+                              <span className="material-icons text-[18px]">arrow_back</span>
+                            </button>
+                            {/* Move Next */}
+                            <button
+                              onClick={() => {
+                                const idx = tabData.measures.findIndex(m => m.id === measure.id);
+                                if (idx < tabData.measures.length - 1) {
+                                  const newMeasures = [...tabData.measures];
+                                  const temp = newMeasures[idx + 1];
+                                  newMeasures[idx + 1] = newMeasures[idx];
+                                  newMeasures[idx] = temp;
+                                  saveToHistory({ ...tabData, measures: newMeasures });
+                                }
+                              }}
+                              className="p-2 rounded-full bg-zinc-50 hover:bg-indigo-100 text-indigo-400 hover:text-indigo-700 shadow transition-all disabled:opacity-30"
+                              title="後移小節"
+                              disabled={tabData.measures.findIndex(m => m.id === measure.id) === tabData.measures.length - 1}
+                            >
+                              <span className="material-icons text-[18px]">arrow_forward</span>
+                            </button>
+                            {/* Text Tab 按鈕 */}
+                            <button
+                              onClick={() => setActiveTextTab({ measureId: measure.id, text: measure.textTab || '' })}
+                              className="p-2 rounded-full bg-emerald-50 hover:bg-emerald-200 text-emerald-500 shadow transition-all"
+                              title="文字譜"
+                            >
+                              <span className="material-icons text-[18px]">edit_note</span>
+                            </button>
+                            {/* Copy */}
+                            <button
+                              onClick={() => {
+                                // 複製小節，產生新 id 並加到 measures 最後
+                                const maxId = tabData.measures.length > 0 ? Math.max(...tabData.measures.map(m => m.id)) : 0;
+                                const target = tabData.measures.find(m => m.id === measure.id);
+                                if (!target) return;
+                                // 深拷貝 notes
+                                const newMeasure = {
+                                  ...target,
+                                  id: maxId + 1,
+                                  notes: target.notes.map(n => ({ ...n })),
+                                };
+                                saveToHistory({
+                                  ...tabData,
+                                  measures: [...tabData.measures, newMeasure]
+                                });
+                              }}
+                              className="p-2 rounded-full bg-blue-50 hover:bg-blue-200 text-blue-500 shadow transition-all"
+                              title="複製小節"
+                            >
+                              <span className="material-icons text-[18px]">content_copy</span>
+                            </button>
+                            {/* Delete */}
+                            <button
+                              onClick={() => {
+                                saveToHistory({
+                                  ...tabData,
+                                  measures: tabData.measures.filter(m => m.id !== measure.id)
+                                });
+                              }}
+                              className="p-2 rounded-full bg-red-50 hover:bg-red-200 text-red-500 shadow transition-all"
+                              title="刪除小節"
+                            >
+                              <span className="material-icons text-[18px]">delete</span>
+                            </button>
+                          </div>
+                        )}
+                                          {/* 文字譜彈窗 */}
+                                          {activeTextTab && activeTextTab.measureId === measure.id && (
+                                            <>
+                                              <div className="fixed inset-0 z-50 bg-black/20 backdrop-blur-[2px]" onClick={() => setActiveTextTab(null)} />
+                                              <div className="absolute inset-x-0 top-10 z-60 bg-white/95 backdrop-blur-md rounded-3xl p-8 border-2 border-emerald-500 shadow-2xl flex flex-col animate-in fade-in zoom-in duration-200 max-w-lg mx-auto">
+                                                <div className="flex items-center justify-between mb-4">
+                                                  <h3 className="font-black text-lg text-emerald-700">編輯文字譜</h3>
+                                                  <button onClick={() => setActiveTextTab(null)} className="p-2 hover:bg-zinc-100 rounded-full text-zinc-400 flex items-center">
+                                                    <span className="material-icons text-[24px]">close</span>
+                                                  </button>
+                                                </div>
+                                                <textarea
+                                                  className="w-full rounded-xl border border-emerald-200 p-4 font-mono text-sm min-h-40 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                                                  value={activeTextTab.text}
+                                                  onChange={e => setActiveTextTab({ ...activeTextTab, text: e.target.value })}
+                                                  placeholder={
+`E |  |  |  |  |
+B |  |  |  |  |
+G |  |  |  |  |
+D |  |  |  |  |
+A |  |  |  |  |
+E |  |  |  |  |`
+                                                  }
+                                                />
+                                                <div className="flex justify-end gap-2 mt-4">
+                                                  <button
+                                                    className="px-5 py-2 rounded-xl bg-zinc-100 text-zinc-500 hover:bg-zinc-200 font-bold"
+                                                    onClick={() => setActiveTextTab(null)}
+                                                  >取消</button>
+                                                  <button
+                                                    className="px-5 py-2 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 font-bold"
+                                                    onClick={() => {
+                                                      updateTextTab(measure.id, activeTextTab.text);
+                                                      setActiveTextTab(null);
+                                                    }}
+                                                  >儲存</button>
+                                                </div>
+                                              </div>
+                                            </>
+                                          )}
                       {/* 和弦選擇彈窗 */}
                       {activeChordPicker === measure.id && (
                         <>
@@ -516,7 +699,7 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
                                 >
                                   {c}
                                   <div className={`text-[9px] uppercase mt-1 opacity-40 group-hover:opacity-100 ${measure.chord === c ? 'text-indigo-200' : ''}`}>
-                                    {tabData.chordLib[c]?.theory || "Chord"}
+                                    {chordInfo[c]?.theory || "Chord"}
                                   </div>
                                 </button>
                               ))}
@@ -525,18 +708,27 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
                         </>
                       )}
 
-                      <div className="flex items-center justify-between mb-10 px-4">
-                        <div 
-                          onClick={() => isEditMode && setActiveChordPicker(measure.id)}
-                          className={`transition-all ${isEditMode ? 'cursor-pointer hover:scale-105 text-indigo-600' : 'text-zinc-900'}`}
-                        >
-                          <span className="text-6xl font-black tracking-tighter uppercase leading-none">{measure.chord || "NO CHORD"}</span>
-                          {isEditMode && <span className="ml-4 text-[10px] font-black text-white uppercase tracking-widest bg-indigo-500 px-3 py-1 rounded-full shadow-lg shadow-indigo-100">變更和弦</span>}
+                        <div className="flex items-center justify-between mb-10 px-4">
+                          <div 
+                            onClick={() => {
+                              if (isEditMode) {
+                                setActiveChordPicker(measure.id);
+                              } else {
+                                // 檢視模式下點擊小節標題，從該小節開始播放
+                                const idx = tabData.measures.findIndex(m => m.id === measure.id);
+                                if (idx !== -1) playTab(idx);
+                              }
+                            }}
+                            className={`transition-all ${isEditMode ? 'cursor-pointer hover:scale-105 text-indigo-600' : 'cursor-pointer hover:scale-105 text-indigo-500'}`}
+                            style={{ userSelect: 'none' }}
+                          >
+                            <span className="text-6xl font-black tracking-tighter uppercase leading-none">{measure.chord || "-"}</span>
+                            {isEditMode && <span className="ml-4 text-[10px] font-black text-white uppercase tracking-widest bg-indigo-500 px-3 py-1 rounded-full shadow-lg shadow-indigo-100">變更和弦</span>}
+                          </div>
+                          <div className="text-[10px] font-black text-zinc-300 uppercase tracking-widest flex items-center gap-2">
+                            <span className="material-icons text-[14px]">straighten</span> 小節 #{measure.id}
+                          </div>
                         </div>
-                        <div className="text-[10px] font-black text-zinc-300 uppercase tracking-widest flex items-center gap-2">
-                          <span className="material-icons text-[14px]">straighten</span> 小節 #{measure.id}
-                        </div>
-                      </div>
 
                       <div className={`relative bg-white border-2 rounded-[3.5rem] p-12 transition-all ${currentMeasure === measure.id ? 'border-indigo-500 shadow-indigo-100 bg-indigo-50/10 ring-14 ring-indigo-50' : 'border-zinc-100'} ${isEditMode ? 'border-dashed border-amber-200' : ''}`}>
                         <div 
@@ -549,7 +741,7 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
                             {[...Array(6)].map((_, i) => (
                               <div key={i} className="relative w-full h-px bg-zinc-100">
                                 <span className="absolute -left-16 -top-2.5 text-[10px] font-black text-zinc-400 w-12 text-right uppercase tracking-tighter">
-                                  {tabData.metadata.tuning[i]}
+                                  {tuningInfo[tabData.metadata.tuningName]?.[i] ?? ''}
                                 </span>
                               </div>
                             ))}
@@ -579,12 +771,12 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
                                   const chordNotes = parseChordNotes(measure.chord);
 
                                   return (
-                                    <div key={s} className="relative w-full h-8 flex items-center justify-center">
+                                    <div key={s} className="relative w-full h-1 flex items-center justify-center">
                                       {note ? (
                                         <button 
                                           disabled={!isEditMode}
                                           onClick={() => handleGridClick(measure.id, stringNum, b)}
-                                          className={`group/note relative z-10 w-12 h-12 rounded-[1.25rem] flex items-center justify-center font-mono font-bold text-sm shadow-xl transition-all ${isNoteActive ? 'bg-indigo-600 text-white scale-110 ring-8 ring-indigo-100' : 'bg-zinc-900 text-white shadow-zinc-200'} ${isEditMode ? 'hover:scale-110 active:scale-95' : 'cursor-default'}`}
+                                          className={`group/note relative z-10 w-8 h-8 rounded-[1.25rem] flex items-center justify-center font-mono font-bold text-sm shadow-xl transition-all ${isNoteActive ? 'bg-indigo-600 text-white scale-110 ring-8 ring-indigo-100' : 'bg-zinc-900 text-white shadow-zinc-200'} ${isEditMode ? 'hover:scale-110 active:scale-95' : 'cursor-default'}`}
                                         >
                                           {note.fret}
                                         </button>
@@ -610,7 +802,7 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
                                                 <span className="material-icons text-[16px]">close</span>
                                               </button>
                                             </div>
-                                            <div className="grid grid-cols-4 gap-3">
+                                            <div className="grid grid-cols-6 gap-3">
                                               {[null, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map(f => {
                                                 const midi = f !== null ? getNoteMidi(stringNum, f) : 0;
                                                 const isChordNote = f !== null && chordNotes.includes(midi % 12);
@@ -618,7 +810,7 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
                                                   <button 
                                                     key={f === null ? 'x' : f}
                                                     onClick={() => setSpecificFret(measure.id, stringNum, b, f)}
-                                                    className={`h-12 rounded-2xl text-xs font-bold transition-all flex items-center justify-center ${
+                                                    className={`h-8 rounded-xl text-xs font-bold transition-all flex items-center justify-center ${
                                                       f === null ? 'bg-red-50 text-red-500 border border-red-100' :
                                                       isChordNote ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100 scale-105' : 'bg-zinc-50 hover:bg-zinc-100 text-zinc-600'
                                                     }`}
@@ -685,9 +877,14 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
           </div>
         ) : (
           <div className="bg-zinc-900 p-12 rounded-[3.5rem] shadow-2xl border border-zinc-800 animate-in slide-in-from-bottom-8">
-            <pre className="text-indigo-300 font-mono text-[13px] leading-loose overflow-auto max-h-200">
-              {JSON.stringify(tabData, null, 2)}
-            </pre>
+            <textarea
+              disabled={!isEditMode}
+              className="w-full text-indigo-300 font-mono text-[13px] leading-loose overflow-auto max-h-200 bg-transparent border-none outline-none resize-vertical"
+              style={{ minHeight: 300 }}
+              value={jsonEditValue}
+              onChange={e => setJsonEditValue(e.target.value)}
+              spellCheck={false}
+            />
           </div>
         )}
       </main>
@@ -695,7 +892,21 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
       <div className="fixed bottom-14 left-1/2 -translate-x-1/2 z-50 flex items-center gap-6">
         <div className="bg-white/95 backdrop-blur-3xl px-12 py-7 rounded-4xl shadow-2xl border border-zinc-200/50 flex items-center gap-12 ring-1 ring-zinc-900/10">
           <button 
-            onClick={() => { if(isPlaying) playTab(); setIsEditMode(!isEditMode); }}
+            onClick={() => {
+              if (isPlaying) playTab();
+              if (isEditMode) {
+                // 結束 JSON 編輯時，嘗試 parse 並 setTabData
+                try {
+                  const parsed = JSON.parse(jsonEditValue);
+                  setTabData(parsed);
+                } catch {
+                  // 可選：顯示錯誤訊息
+                }
+                setIsEditMode(false);
+              } else {
+                setIsEditMode(true);
+              }
+            }}
             className={`flex items-center gap-5 px-10 py-5 rounded-4xl font-black text-sm tracking-[0.2em] transition-all active:scale-95 ${isEditMode ? 'bg-amber-100 text-amber-800 ring-2 ring-amber-200 shadow-xl shadow-amber-100' : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200'}`}
           >
             <span className="material-icons text-[16px]">{isEditMode ? 'check' : 'layers'}</span>
@@ -703,7 +914,7 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
           </button>
           
           <button 
-            onClick={playTab}
+            onClick={() => playTab()}
             disabled={isEditMode}
             className={`w-12 h-12 rounded-[2.5rem] flex items-center justify-center transition-all shadow-2xl ${
               isPlaying ? 'bg-red-500 shadow-red-200 text-white animate-pulse' : 

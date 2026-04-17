@@ -61,7 +61,7 @@ const Converter: React.FC<ConverterProps> = ({ onChange }) => {
     
     嚴格遵守以下 JSON 結構：
     {
-      "metadata": { "title": "字串", "artist": "字串", "key": "字串", "bpm": 數字, "subdivisions": 4, "capo": 數字, "tuning": ["E","B","G","D","A","E"] },
+      "metadata": { "title": "字串", "artist": "字串", "key": "字串", "bpm": 數字, "subdivisions": 4, "capo": 數字, "tuningName": "standard" },
       "chordLib": { "和弦名": { "frets": [1弦, 2弦, 3弦, 4弦, 5弦, 6弦], "theory": "簡短分析" } },
       "measures": [
         { "id": 1, "chord": "和弦名", "lyrics": "歌詞", "notes": [{ "string": 1-6, "fret": 0-24, "beat": 0-3 }] }
@@ -91,6 +91,8 @@ const Converter: React.FC<ConverterProps> = ({ onChange }) => {
       const textResult = data.candidates?.[0]?.content?.parts?.[0]?.text;
       if (textResult) {
         const parsed = JSON.parse(textResult);
+        // chordLib 已棄用，移除
+        if (parsed.chordLib) delete parsed.chordLib;
         setResult(parsed);
         if (onChange) onChange(parsed);
       }

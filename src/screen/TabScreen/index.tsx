@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Tab from './Tab';
 import Converter from './Converter';
 import Management from './Management';
+import Play from './Play';
 import { INITIAL_TAB_DATA } from './initialTabData';
 
 // --- 型別定義（僅保留必要） ---
@@ -12,7 +13,7 @@ interface Metadata {
   bpm: number;
   subdivisions: number;
   capo: number;
-  tuning: string[];
+  tuningName: string;
 }
 interface Note {
   string: number;
@@ -25,17 +26,12 @@ interface Measure {
   lyrics: string;
   notes: Note[];
 }
-interface ChordInfo {
-  frets: (number | null)[];
-  theory: string;
-}
 export interface TabData {
   metadata: Metadata;
-  chordLib: Record<string, ChordInfo>;
   measures: Measure[];
 }
 
-type Mode = 'management' | 'tab' | 'converter';
+type Mode = 'management' | 'tab' | 'converter' | 'play';
 
 const STORAGE_KEY = 'tabdata_list';
 
@@ -67,13 +63,16 @@ const TabScreen: React.FC = () => {
   } else if (mode === 'converter') {
     headerTitle = '圖片辨識轉譜';
     headerDesc = '將六線譜圖片轉為可編輯樂譜';
+  } else if (mode === 'play') {
+    headerTitle = '簡化譜面';
+    headerDesc = '以簡化方式瀏覽樂譜';
   }
 
   return (
     <div>
       {/* Header 區塊 */}
       <header className="bg-white/80 backdrop-blur-md border-b border-zinc-100 px-6 py-4 mb-8 sticky top-0 z-40">
-        <div className="max-w-5xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
           <div>
             <h1 className="text-2xl md:text-3xl font-black tracking-tight mb-1">{headerTitle}</h1>
             <div className="text-zinc-400 text-xs md:text-sm font-bold tracking-widest">{headerDesc}</div>
@@ -89,9 +88,8 @@ const TabScreen: React.FC = () => {
                     bpm: 80,
                     subdivisions: 4,
                     capo: 0,
-                    tuning: ['E', 'B', 'G', 'D', 'A', 'E']
+                    tuningName: 'standard'
                   },
-                  chordLib: {},
                   measures: []
                 });
                 setMode('tab');
@@ -106,16 +104,18 @@ const TabScreen: React.FC = () => {
             <button onClick={() => setMode('management')} className={`px-4 py-2 rounded-xl font-bold transition-colors ${mode==='management' ? 'bg-indigo-600 text-white shadow' : 'bg-zinc-100 text-zinc-500 hover:bg-indigo-50'}`}>管理</button>
             <button onClick={() => setMode('tab')} className={`px-4 py-2 rounded-xl font-bold transition-colors ${mode==='tab' ? 'bg-indigo-600 text-white shadow' : 'bg-zinc-100 text-zinc-500 hover:bg-indigo-50'}`}>Tab</button>
             <button onClick={() => setMode('converter')} className={`px-4 py-2 rounded-xl font-bold transition-colors ${mode==='converter' ? 'bg-indigo-600 text-white shadow' : 'bg-zinc-100 text-zinc-500 hover:bg-indigo-50'}`}>Converter</button>
+            <button onClick={() => setMode('play')} className={`px-4 py-2 rounded-xl font-bold transition-colors ${mode==='play' ? 'bg-emerald-600 text-white shadow' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'}`}>Play</button>
           </div>
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto">
+      <main className="pl-8 pr-8">
         {mode === 'management' && (
           <Management onSelect={data => { setTabData(data); setMode('tab'); }} />
         )}
         {mode === 'tab' && <Tab tabData={tabData} setTabData={setTabData} />}
         {mode === 'converter' && <Converter onChange={(data: TabData) => { setTabData(data); setMode('tab'); }} />}
+        {mode === 'play' && <Play tabData={tabData} />}
       </main>
     </div>
   );

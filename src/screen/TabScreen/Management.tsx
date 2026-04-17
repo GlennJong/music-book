@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { TabData } from './index';
-import { INITIAL_TAB_DATA } from './initialTabData';
+
 
 interface ManagementProps {
   onSelect: (data: TabData) => void;
@@ -22,11 +22,7 @@ const Management: React.FC<ManagementProps> = ({ onSelect }) => {
       }
     }
     // 避免同步 setState，改為 effect 外部計算
-    if (!Array.isArray(arr) || arr.length === 0) {
-      setTabList([INITIAL_TAB_DATA]);
-    } else {
-      setTabList(arr);
-    }
+    setTabList(Array.isArray(arr) ? arr : []);
   }, []);
 
   const handleDelete = (idx: number) => {
