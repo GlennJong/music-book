@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import './style.css';
 
-import type { TabData } from '../index';
 import { tuningInfo } from '../tuningInfo';
+import type { TabData } from '../../../types';
 
 interface PlayProps {
   tabData: TabData;

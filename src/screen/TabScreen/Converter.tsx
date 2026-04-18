@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
+import type { TabData } from '../../types';
 
-// --- 與 Renderer 一致的型別定義 ---
-
-import type { TabData } from './index';
 
 interface ConverterProps {
   onChange?: (data: TabData) => void;

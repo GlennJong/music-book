@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ReactHooks } from '@glennjong/vibe-sheets';
-import './App.css'
-import FileItem from './components/FileItem';
+import FileItem from '../../../components/FileItem';
 
 type CreateSheetBoxProps = {
   createSheet: (options: { sheetName: string, prefix?: string, columns?: { name: string, type: 'string' | 'number' | 'boolean' }[], tabName?: string }) => Promise<void>;

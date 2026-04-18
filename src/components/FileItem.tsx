@@ -1,20 +1,9 @@
 import { useState } from 'react';
 import { type DriveFile } from '@glennjong/vibe-sheets';
-// import { fetchScript } from '../common/fetch';
-
-// import type { TabData } from '../screen/TabScreen/index';
-
-// import type { Data, RawData } from '../types';
-
-interface RawData {
-
-}
-
-interface Data  {
-}
+import type { RawData } from '../types';
 
 // eslint-disable-next-line react-refresh/only-export-components
-export const fetchScript = async (url: string, method: 'GET' | 'POST' = 'GET', body?: unknown): Promise<Data[]> => {
+export const fetchScript = async (url: string, method: 'GET' | 'POST' = 'GET', body?: unknown): Promise<RawData[]> => {
   const options: RequestInit = { method };
   if (method === 'POST' && body) options.body = JSON.stringify(body);
   const res = await fetch(url, options);
@@ -33,7 +22,6 @@ const FileItem = ({ isNew, file, onSelect }: { isNew: boolean, file: DriveFile, 
   const [ isAccessed, setIsAccessed ] = useState<boolean | undefined>(!isNew);
 
   const handleSelect = async () => {
-    console.log(file.scriptUrl)
     try {
       if (file.description) {
         if (file.scriptUrl) {

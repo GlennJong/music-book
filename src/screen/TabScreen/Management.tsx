@@ -1,11 +1,11 @@
 
 import React from 'react';
-import type { TabData } from './index';
+import type { TabData } from '../../types';
 
 interface ManagementProps {
   tabList: TabData[];
   onSelect: (data: TabData) => void;
-  onDelete: (idx: number) => void;
+  onDelete: (id: string) => void;
   reloadTabList?: () => void;
 }
 
@@ -33,7 +33,7 @@ const Management: React.FC<ManagementProps> = ({ tabList, onSelect, onDelete, re
                 <button
                   className="px-4 py-2 rounded-xl bg-red-100 text-red-500 font-bold hover:bg-red-200"
                   onClick={() => {
-                    onDelete(idx);
+                    onDelete(tab.id);
                     if (reloadTabList) reloadTabList();
                   }}
                 >

@@ -1,51 +1,20 @@
 import React, { useState } from 'react';
-import Tab from './Tab';
 import Converter from './Converter';
 import Management from './Management';
 import Play from './Play';
-import { INITIAL_TAB_DATA } from './initialTabData';
 import { useTabData } from '../../hooks/useTabData';
 import Setup from './Setup';
+import Editor from './Editor';
+import type { TabData } from '../../types';
 
-// --- 型別定義（僅保留必要） ---
-interface Note {
-  string: number;
-  fret: number;
-  beat: number;
-}
-interface Measure {
-  id: number;
-  chord: string;
-  lyrics: string;
-  notes: Note[];
-}
-// 扁平化 TabData
-export interface TabData {
-  title: string;
-  artist: string;
-  key: string;
-  bpm: number;
-  subdivisions: number;
-  capo: number;
-  tuningName: string;
-  measures: Measure[];
-}
-
-type Mode = 'management' | 'tab' | 'converter' | 'play' | 'setup';
-
-
+type Mode = 'management' | 'editor' | 'converter' | 'play' | 'setup';
 
 
 const TabScreen: React.FC = () => {
-  const [tabData, setTabData] = useState<TabData>(INITIAL_TAB_DATA);
+  const [selectedTabIndex, setSelectedTabIndex] = useState<number>();
   const [mode, setMode] = useState<Mode>('management');
-  const { tabList, add, remove, reload } = useTabData();
-
-  // 儲存目前 tabData 到 useTabData
-  const saveCurrentTab = () => {
-    add(tabData);
-    alert('已儲存到本地');
-  };
+  const scriptUrl = localStorage.getItem('my_music_script_url');
+  const { tabList, addTabData, updateTabData, removeTabData} = useTabData(scriptUrl);
 
   // Header 標題與描述
   let headerTitle = '樂譜管理';
@@ -53,7 +22,7 @@ const TabScreen: React.FC = () => {
   if (mode === 'management') {
     headerTitle = '樂譜管理';
     headerDesc = '管理、選擇、刪除已儲存的樂譜';
-  } else if (mode === 'tab') {
+  } else if (mode === 'editor') {
     headerTitle = '吉他譜';
     headerDesc = '編輯樂譜內容';
   } else if (mode === 'converter') {
@@ -75,33 +44,25 @@ const TabScreen: React.FC = () => {
             
           </div>
           <div className="flex gap-2 mt-2 md:mt-0">
-            {mode === 'management' && (
+            {mode==='editor' && (
+              <button onClick={() => setMode('play')} className={`px-4 py-2 rounded-xl font-bold transition-colors bg-emerald-600 text-white shadow}`}>彈奏模式</button>
+            )}
+            { mode === 'management' && (
               <button
+                className={`px-4 py-2 rounded-xl font-bold transition-colors ${mode==='management' ? 'bg-indigo-600 text-white shadow' : 'bg-zinc-100 text-zinc-500 hover:bg-indigo-50'}`}
                 onClick={() => {
-                  setTabData({
-                    title: '',
-                    artist: '',
-                    key: 'C',
-                    bpm: 80,
-                    subdivisions: 4,
-                    capo: 0,
-                    tuningName: 'standard',
-                    measures: []
-                  });
-                  setMode('tab');
+                  setSelectedTabIndex(undefined);
+                  setMode('editor');
                 }}
-                className="px-4 py-2 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 font-bold"
-              >
-                新增樂譜
-              </button>
-            )}
-            {mode==='tab' && (
-              <>
-                <button onClick={saveCurrentTab} className="px-4 py-2 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100 hover:bg-indigo-100 font-bold">另存新樂譜</button>
-                <button onClick={() => setMode('play')} className={`px-4 py-2 rounded-xl font-bold transition-colors bg-emerald-600 text-white shadow}`}>彈奏模式</button>
-              </>
-            )}
-            <button onClick={() => setMode('management')} className={`px-4 py-2 rounded-xl font-bold transition-colors ${mode==='management' ? 'bg-indigo-600 text-white shadow' : 'bg-zinc-100 text-zinc-500 hover:bg-indigo-50'}`}>管理樂譜</button>
+              >新增</button>
+            ) }
+            <button
+              className={`px-4 py-2 rounded-xl font-bold transition-colors ${mode==='management' ? 'bg-indigo-600 text-white shadow' : 'bg-zinc-100 text-zinc-500 hover:bg-indigo-50'}`}
+              onClick={() => {
+                setSelectedTabIndex(undefined);
+                setMode('management');
+              }}
+              >管理樂譜</button>
             <button onClick={() => setMode('converter')} className={`px-4 py-2 rounded-xl font-bold transition-colors ${mode==='converter' ? 'bg-indigo-600 text-white shadow' : 'bg-zinc-100 text-zinc-500 hover:bg-indigo-50'}`}>轉換器</button>
             <button
               onClick={() => setMode('setup')}
@@ -117,15 +78,37 @@ const TabScreen: React.FC = () => {
         {mode === 'management' && (
           <Management 
             tabList={tabList}
-            onSelect={data => { setTabData(data); setMode('tab'); }}
-            onDelete={remove}
-            reloadTabList={reload}
+            onSelect={data => { setSelectedTabIndex(tabList.findIndex(t => t.id === data.id)); setMode('editor'); }}
+            onDelete={(id) => removeTabData(id)}
+            // reloadTabList={sync}
           />
         )}
-        {mode === 'tab' && <Tab tabData={tabData} setTabData={setTabData} />}
-        {mode === 'converter' && <Converter onChange={(data: TabData) => { setTabData(data); setMode('tab'); }} />}
-        {mode === 'play' && <Play tabData={tabData} />}
-        {mode === 'setup' && <Setup />}
+        { mode === 'editor' &&
+          <Editor
+            tabData={ selectedTabIndex === undefined ? undefined : tabList[selectedTabIndex]}
+            updateData={async(data) => {
+              await updateTabData(data.id, data);
+              setSelectedTabIndex(undefined);
+              setMode('management');
+            }}
+            createData={async(data) => {
+              addTabData(data);
+              setSelectedTabIndex(undefined);
+              setMode('management');
+            }}
+          />
+        }
+        { mode === 'converter' &&
+          <Converter onChange={(data: TabData) => {
+            addTabData(data);
+            setSelectedTabIndex(undefined);
+            setMode('management');
+          }} />
+        }
+        { selectedTabIndex !== undefined &&
+          mode === 'play' && <Play tabData={tabList[selectedTabIndex]} />
+        }
+        {mode === 'setup' && <Setup onSelect={() => setMode('management')} />}
       </main>
     </div>
   );

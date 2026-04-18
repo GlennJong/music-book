@@ -1,12 +1,11 @@
 import { lazy, Suspense } from 'react';
 import { ReactHooks } from '@glennjong/vibe-sheets';
-// import '../../App.css'
 
-const SheetSelector = lazy(() => import('../../SheetSelector'));
+const SheetSelector = lazy(() => import('./SheetSelector'));
 
 const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
-const Setup = () => {
+const Setup = ({ onSelect }: { onSelect: () => void }) => {
   const { login, accessToken, isAppsScriptEnabled } = ReactHooks.useGoogleAuth({
     clientId
   });
@@ -56,6 +55,7 @@ const Setup = () => {
         token={accessToken}
         onSelect={(endpoint: string) => {
           localStorage.setItem('my_music_script_url', endpoint);
+          onSelect();
         }}
       />
     </Suspense>
