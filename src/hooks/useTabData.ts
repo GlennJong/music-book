@@ -14,15 +14,52 @@ type SyncTask = {
 
 export const useTabData = (scriptUrl: string | null) => {
   const [tabList, setTabList] = useState<TabData[]>(() => {
-    try {
-      const saved = localStorage.getItem('local_tabData');
-      return saved ? JSON.parse(saved) : [];
-    } catch { return []; }
+    return [];
   });
 
+  // Fetch cloud & local data, merge, and set tabList
+  useEffect(() => {
+    const fetchAndCompare = async () => {
+      if (!scriptUrl) return;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let cloud: any[] = [];
+      try {
+        cloud = await fetchScript(scriptUrl, 'GET');
+      } catch (e) {
+        console.error('Fetch cloud tabData failed', e);
+      }
+      const localRaw = localStorage.getItem('local_tabData');
+      const local: TabData[] = localRaw ? JSON.parse(localRaw) : [];
+
+      // 合併 cloud 和 local，標記 syncStatus
+      const merged: TabData[] = cloud.map(cloudItem => {
+        const localItem = local.find(l => l.id === cloudItem.id);
+        if (!localItem) {
+          return { ...cloudItem, syncStatus: 'synced' };
+        }
+        if (cloudItem.updated_at === localItem.updated_at) {
+          return { ...cloudItem, syncStatus: 'synced' };
+        } else {
+          // 以本地為主，標記 pending
+          return { ...localItem, syncStatus: 'pending' };
+        }
+      });
+
+      // local 有但 cloud 沒有的（本地新增/待同步）
+      local.forEach(localItem => {
+        if (!cloud.find(c => c.id === localItem.id)) {
+          merged.push({ ...localItem, syncStatus: 'pending' });
+        }
+      });
+
+      setTabList(merged);
+    };
+    fetchAndCompare();
+  }, [scriptUrl]);
+  
   const [pendingTasks, setPendingTasks] = useState<SyncTask[]>(() => {
     try {
-      const saved = localStorage.getItem('moneybook_pending_tasks');
+      const saved = localStorage.getItem('musicbook_pending_tasks');
       return saved ? JSON.parse(saved) : [];
     } catch { return []; }
   });
@@ -36,7 +73,7 @@ export const useTabData = (scriptUrl: string | null) => {
   }, [tabList]);
 
   useEffect(() => {
-    localStorage.setItem('moneybook_pending_tasks', JSON.stringify(pendingTasks));
+    localStorage.setItem('musicbook_pending_tasks', JSON.stringify(pendingTasks));
   }, [pendingTasks]);
 
   // Sync Logic
