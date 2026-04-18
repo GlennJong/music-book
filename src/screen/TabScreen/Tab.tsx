@@ -1,6 +1,6 @@
+
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import MeasureActions from './components/MeasureActions';
-
 import * as Tone from 'tone';
 import { chordInfo } from './chordInfo';
 import { tuningInfo } from './tuningInfo';
@@ -92,7 +92,7 @@ const parseChordNotes = (chordName: string): number[] => {
 
 const getNoteMidi = (stringNum: number, fret: number): number => STRING_BASE_MIDI[stringNum - 1] + fret;
 
-
+const deepCopy = (obj: unknown) => JSON.parse(JSON.stringify(obj));
 
 interface TabProps {
   tabData: TabData;
@@ -100,6 +100,7 @@ interface TabProps {
 }
 
 const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
+  // 取得 add 方法，讓每次 setTabData 都自動儲存
   const [measuresPerRow, setMeasuresPerRow] = useState<number>(2);
   const [history, setHistory] = useState<HistoryState>({ past: [], future: [] });
   const [isEditMode, setIsEditMode] = useState<boolean>(false);
@@ -128,6 +129,22 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
   const synth = useRef<Tone.PolySynth | null>(null);
   const reverb = useRef<Tone.Reverb | null>(null);
 
+
+  const [currentData, setCurrentData] = useState<TabData>(deepCopy(tabData));
+  
+  // 當 tabData 變動時，重設 currentData
+  useEffect(() => {
+    setCurrentData(deepCopy(tabData));
+    setJsonEditValue(JSON.stringify(tabData, null, 2));
+  }, [tabData]);
+  
+  // 切換 JSON 編輯時，同步 currentData
+  useEffect(() => {
+    if (!isEditMode) {
+      setJsonEditValue(JSON.stringify(currentData, null, 2));
+    }
+  }, [isEditMode, currentData]);
+
   // 載入 Material Icons
   useEffect(() => {
     const link = document.createElement('link');
@@ -149,16 +166,6 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
       Tone.Transport.cancel();
     };
   }, []);
-
-  // --- 歷史紀錄系統 ---
-
-  const saveToHistory = useCallback((newData: TabData) => {
-    setHistory(prev => ({
-      past: [...prev.past, tabData],
-      future: []
-    }));
-    setTabData(newData);
-  }, [tabData, setTabData]);
 
   const undo = useCallback(() => {
     if (history.past.length === 0) return;
@@ -194,17 +201,14 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
   // --- 編輯功能邏輯 ---
   const addMeasure = () => {
     const newId = tabData.measures.length > 0 ? Math.max(...tabData.measures.map(m => m.id)) + 1 : 1;
-    saveToHistory({
-      ...tabData,
-      measures: [...tabData.measures, { id: newId, chord: "", lyrics: "", notes: [] }]
-    });
+    setTabData({ ...tabData, measures: [...tabData.measures, { id: newId, chord: "", lyrics: "", notes: [] }] });
   };
 
   const updateLyrics = (measureId: number, text: string) => {
     const newMeasures = tabData.measures.map(m => 
       m.id === measureId ? { ...m, lyrics: text } : m
     );
-    saveToHistory({ ...tabData, measures: newMeasures });
+    setTabData({ ...tabData, measures: newMeasures });
   };
 
   // 文字譜內容儲存
@@ -246,7 +250,7 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
       }
       return m;
     });
-    saveToHistory({ ...tabData, measures: newMeasures });
+    setTabData({ ...tabData, measures: newMeasures });
   };
 
   const clearColumn = (measureId: number, beat: number) => {
@@ -256,7 +260,7 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
       }
       return m;
     });
-    saveToHistory({ ...tabData, measures: newMeasures });
+    setTabData({ ...tabData, measures: newMeasures });
   };
 
   const duplicateToNextEmpty = (measureId: number, currentBeat: number) => {
@@ -281,7 +285,7 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
       }
       return m;
     });
-    saveToHistory({ ...tabData, measures: newMeasures });
+    setTabData({ ...tabData, measures: newMeasures });
   };
 
   const handleGridClick = (measureId: number, stringNum: number, beat: number) => {
@@ -303,7 +307,7 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
         }
         return m;
       });
-      saveToHistory({ ...tabData, measures: newMeasures });
+      setTabData({ ...tabData, measures: newMeasures });
     }
   };
 
@@ -312,7 +316,6 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
     const newMeasures = tabData.measures.map(m => {
       if (m.id === measureId) {
         if (m.notes.length === 0 && newChordInfo) {
-          // frets[0] = 1弦, frets[5] = 6弦
           const baseNotes = newChordInfo.frets
             .map((fret: number | null, idx: number) => fret !== null ? { string: idx + 1, fret: fret, beat: 0 } : null)
             .filter((n: Note | null): n is Note => n !== null);
@@ -329,7 +332,7 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
       }
       return m;
     });
-    saveToHistory({ ...tabData, measures: newMeasures });
+    setTabData({ ...tabData, measures: newMeasures });
     setActiveChordPicker(null);
     setChordFilter('');
   };
@@ -349,7 +352,7 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
       }
       return m;
     });
-    saveToHistory({ ...tabData, measures: newMeasures });
+    setTabData({ ...tabData, measures: newMeasures });
     setActiveFretPicker(null);
   };
 
@@ -451,7 +454,7 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
                 <input
                   className="text-xl font-black tracking-tight uppercase bg-transparent border-b-2 border-indigo-100 focus:border-indigo-400 outline-none w-full mb-1"
                   value={tabData.title}
-                  onChange={e => setTabData({ ...tabData, title: e.target.value })}
+                  onChange={e => setCurrentData({ ...currentData, title: e.target.value })}
                   placeholder="請輸入標題"
                   aria-label="樂譜標題"
                   maxLength={64}
@@ -495,7 +498,7 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
                   {[4, 8, 16].map(num => (
                     <button
                       key={num}
-                      onClick={() => isEditMode && saveToHistory({...tabData, subdivisions: num})}
+                      onClick={() => isEditMode && setTabData({...tabData, subdivisions: num})}
                       disabled={!isEditMode}
                       className={`px-4 py-2 rounded-xl font-bold text-sm transition-all ${tabData.subdivisions === num ? 'bg-zinc-900 text-white shadow-lg' : 'bg-zinc-100 text-zinc-400'} ${!isEditMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-zinc-200'}`}
                     >
@@ -535,7 +538,7 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
                   onClick={() => {
                     const newId = tabData.measures.length > 0 ? Math.max(...tabData.measures.map(m => m.id)) + 1 : 1;
                     const newMeasure = { id: newId, chord: '', lyrics: '', notes: [] };
-                    saveToHistory({
+                    setTabData({
                       ...tabData,
                       measures: [newMeasure, ...tabData.measures]
                     });
@@ -564,7 +567,7 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
                                 const temp = newMeasures[idx - 1];
                                 newMeasures[idx - 1] = newMeasures[idx];
                                 newMeasures[idx] = temp;
-                                saveToHistory({ ...tabData, measures: newMeasures });
+                                setTabData({ ...tabData, measures: newMeasures });
                               }
                             }}
                             onMoveNext={() => {
@@ -574,7 +577,7 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
                                 const temp = newMeasures[idx + 1];
                                 newMeasures[idx + 1] = newMeasures[idx];
                                 newMeasures[idx] = temp;
-                                saveToHistory({ ...tabData, measures: newMeasures });
+                                setTabData({ ...tabData, measures: newMeasures });
                               }
                             }}
                             onTextTab={() => setActiveTextTab({ measureId: measure.id, text: measure.textTab || '' })}
@@ -593,13 +596,13 @@ const Tab: React.FC<TabProps> = ({ tabData, setTabData }) => {
                                 newMeasure,
                                 ...tabData.measures.slice(idx + 1)
                               ];
-                              saveToHistory({
+                              setTabData({
                                 ...tabData,
                                 measures: newMeasures
                               });
                             }}
                             onDelete={() => {
-                              saveToHistory({
+                              setTabData({
                                 ...tabData,
                                 measures: tabData.measures.filter(m => m.id !== measure.id)
                               });

@@ -75,28 +75,30 @@ const TabScreen: React.FC = () => {
             
           </div>
           <div className="flex gap-2 mt-2 md:mt-0">
-            <button
-              onClick={() => {
-                setTabData({
-                  title: '',
-                  artist: '',
-                  key: 'C',
-                  bpm: 80,
-                  subdivisions: 4,
-                  capo: 0,
-                  tuningName: 'standard',
-                  measures: []
-                });
-                setMode('tab');
-              }}
-              className="px-4 py-2 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 font-bold"
-            >
-              新增空白樂譜
-            </button>
+            {mode === 'management' && (
+              <button
+                onClick={() => {
+                  setTabData({
+                    title: '',
+                    artist: '',
+                    key: 'C',
+                    bpm: 80,
+                    subdivisions: 4,
+                    capo: 0,
+                    tuningName: 'standard',
+                    measures: []
+                  });
+                  setMode('tab');
+                }}
+                className="px-4 py-2 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 font-bold"
+              >
+                新增樂譜
+              </button>
+            )}
             {mode==='tab' && (
               <>
-                <button onClick={saveCurrentTab} className="px-4 py-2 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100 hover:bg-indigo-100 font-bold">儲存目前樂譜</button>
-                <button onClick={() => setMode('play')} className={`px-4 py-2 rounded-xl font-bold transition-colors bg-emerald-600 text-white shadow}`}>Play</button>
+                <button onClick={saveCurrentTab} className="px-4 py-2 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100 hover:bg-indigo-100 font-bold">另存新樂譜</button>
+                <button onClick={() => setMode('play')} className={`px-4 py-2 rounded-xl font-bold transition-colors bg-emerald-600 text-white shadow}`}>彈奏模式</button>
               </>
             )}
             <button onClick={() => setMode('management')} className={`px-4 py-2 rounded-xl font-bold transition-colors ${mode==='management' ? 'bg-indigo-600 text-white shadow' : 'bg-zinc-100 text-zinc-500 hover:bg-indigo-50'}`}>管理樂譜</button>
