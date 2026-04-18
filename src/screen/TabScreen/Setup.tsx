@@ -10,16 +10,16 @@ const Setup = () => {
   const { login, accessToken, isAppsScriptEnabled } = ReactHooks.useGoogleAuth({
     clientId
   });
-  const vibeScriptUrl = typeof window !== 'undefined' ? localStorage.getItem('vibe_script_url') : null;
+  const vibeScriptUrl = typeof window !== 'undefined' ? localStorage.getItem('my_music_script_url') : null;
 
-  // Show delete button if vibe_script_url exists
+  // Show delete button if my_music_script_url exists
   if (!accessToken) {
     return (
       <div className="card" style={{ color: 'var(--text-main)', textAlign: 'center', padding: '40px 20px' }}>
         {vibeScriptUrl ? (
           <button
             onClick={() => {
-              localStorage.removeItem('vibe_script_url');
+              localStorage.removeItem('my_music_script_url');
               window.location.reload();
             }}
             style={{ fontSize: '1.1em', padding: '12px 24px', backgroundColor: 'var(--danger)', color: 'var(--bg-card)', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
@@ -55,7 +55,7 @@ const Setup = () => {
       <SheetSelector
         token={accessToken}
         onSelect={(endpoint: string) => {
-          localStorage.setItem('vibe_script_url', endpoint);
+          localStorage.setItem('my_music_script_url', endpoint);
         }}
       />
     </Suspense>

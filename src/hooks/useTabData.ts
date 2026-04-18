@@ -38,8 +38,8 @@ export function useTabData() {
 
 // Google Sheets 溝通
 export async function updateSheetWithTabData(tabData: TabData) {
-  const endpoint = localStorage.getItem('vibe_script_url');
-  if (!endpoint) throw new Error('vibe_script_url not set');
+  const endpoint = localStorage.getItem('my_music_script_url');
+  if (!endpoint) throw new Error('my_music_script_url not set');
   const res = await fetch(endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

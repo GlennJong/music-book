@@ -116,7 +116,7 @@ const SheetSelector = ({ token, onSelect }: { token: string, onSelect: (endpoint
 
 
   const handleStoreEndpoint = (endpoint: string) => {
-    localStorage.setItem('vibe_script_url', endpoint);
+    localStorage.setItem('my_music_script_url', endpoint);
     onSelect(endpoint);
   };
   
