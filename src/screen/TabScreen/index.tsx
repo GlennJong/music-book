@@ -14,7 +14,13 @@ const TabScreen: React.FC = () => {
   const [selectedTabIndex, setSelectedTabIndex] = useState<number>();
   const [mode, setMode] = useState<Mode>('management');
   const scriptUrl = localStorage.getItem('my_music_script_url');
-  const { tabList, addTabData, updateTabData, removeTabData} = useTabData(scriptUrl);
+  const { isSyncing, tabList, addTabData, updateTabData, removeTabData} = useTabData(scriptUrl);
+
+  if (isSyncing) {
+    return <div style={{ display: 'flex', justifyContent: 'center', padding: '20px' }}>
+      <span className="spinner" style={{ width: '24px', height: '24px', border: '3px solid var(--primary)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></span>
+    </div>;
+  }
 
   // Header 標題與描述
   let headerTitle = '樂譜管理';
