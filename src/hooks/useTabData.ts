@@ -51,6 +51,9 @@ export const useTabData = (scriptUrl: string | null) => {
           merged.push({ ...localItem, syncStatus: 'pending' });
         }
       });
+      for (const item of merged) {
+        item.measures = typeof item.measures === 'string' ? JSON.parse(item.measures) : item.measures;
+      }
 
       setTabList(merged);
     };
