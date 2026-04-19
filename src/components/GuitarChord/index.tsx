@@ -12,7 +12,7 @@ const GuitarChordPhoto: React.FC<PhotoProps> = ({ chord, isShowTitle = true, siz
   if (!chord) return (
     <div className="flex flex-col items-center justify-center h-64 w-48 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
       <span className="material-icons text-slate-200 text-4xl mb-2">music_off</span>
-      <p className="text-slate-300 font-bold text-xs uppercase">無此指法</p>
+      <p className="text-slate-300 font-bold text-xs">無此指法</p>
     </div>
   );
 
@@ -27,7 +27,7 @@ const GuitarChordPhoto: React.FC<PhotoProps> = ({ chord, isShowTitle = true, siz
 
   return (
     <div className={`flex flex-col items-center bg-white rounded-3xl border border-slate-100 animate-in fade-in zoom-in duration-300 ${cfg.p}`}>
-      {isShowTitle && <h3 className={`font-black text-slate-800 mb-4 tracking-tight uppercase ${cfg.ts}`}>{name}</h3>}
+      {isShowTitle && <h3 className={`font-black text-slate-800 mb-4 tracking-tight ${cfg.ts}`}>{name}</h3>}
       <svg width={cfg.w + cfg.ml + 20} height={cfg.h + cfg.mt + 20} viewBox={`0 0 ${cfg.w + cfg.ml + 20} ${cfg.h + cfg.mt + 20}`}>
         {startFret > 1 && <text x={cfg.ml - 10} y={cfg.mt + SY / 2 + (cfg.ls / 2)} textAnchor="end" fontSize={cfg.ls} fontWeight="bold" fill="#4F46E5">{startFret}fr</text>}
         {pos.map((f, i) => {
@@ -104,7 +104,7 @@ const GuitarChordSelector: React.FC<SelectorProps> = ({ onChange, defaultChord }
         </select>
       </div>
       <div className="flex flex-col gap-1.5">
-        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">按法篩選</span>
+        <span className="text-[10px] font-black text-slate-400 tracking-widest ml-1">按法篩選</span>
         <div className="grid grid-cols-4 gap-1.5">
           {["All", "Open", "E", "A"].map(s => (
             <button key={s} disabled={s !== "All" && !fullList.some(c => c.baseShape === s)} onClick={() => setShape(s)} className={`py-1.5 rounded-lg text-xs font-bold transition-all border ${shape === s ? "bg-indigo-600 border-indigo-600 text-white shadow-md" : "bg-white border-slate-200 text-slate-600 hover:border-indigo-300 disabled:opacity-20"}`}>

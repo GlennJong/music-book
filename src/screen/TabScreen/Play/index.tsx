@@ -17,11 +17,11 @@ const MeasureView: React.FC<{ measure: TabData['measures'][0]; subdivisions: num
   return (
     <div className="flex-1 min-w-[260px] bg-white rounded-3xl border border-zinc-100 p-6 space-y-4">
       <div className="flex items-center gap-3">
-        <span className="text-2xl font-black tracking-tighter text-zinc-800 uppercase leading-none">
+        <span className="text-2xl font-black tracking-tighter text-zinc-800 leading-none">
           {measure.chord || '-'}
         </span>
         <GuitarChordPhoto chord={chordPhoto} size="sm" isShowTitle={false} />
-        <span className="ml-auto text-[10px] font-black text-zinc-300 uppercase tracking-widest">#{measure.id}</span>
+        <span className="ml-auto text-[10px] font-black text-zinc-300 tracking-widest">#{measure.id}</span>
       </div>
 
       <div className="relative bg-zinc-50 rounded-2xl p-5 pl-8">
@@ -87,8 +87,8 @@ const Play: React.FC<PlayProps> = ({ tabData }) => {
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900 font-sans">
       <div className="bg-white border-b border-zinc-100 px-6 py-5">
-        <h1 className="text-2xl font-black tracking-tight uppercase">{title || '未命名'}</h1>
-        <div className="flex flex-wrap gap-3 text-[11px] font-bold text-zinc-400 uppercase tracking-widest mt-1.5">
+        <h1 className="text-2xl font-black tracking-tight">{title || '未命名'}</h1>
+        <div className="flex flex-wrap gap-3 text-[11px] font-bold text-zinc-400 tracking-widest mt-1.5">
           {artist && <><span>{artist}</span><span>•</span></>}
           {key && <><span>{key} 調</span><span>•</span></>}
           <span>{bpm} BPM</span>
@@ -98,7 +98,7 @@ const Play: React.FC<PlayProps> = ({ tabData }) => {
 
       <div className="px-6 py-4 flex flex-wrap items-center gap-4 border-b border-zinc-100 bg-white/80">
         <div className="flex items-center gap-2">
-          <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">每行小節</span>
+          <span className="text-[10px] font-black text-zinc-400 tracking-widest">每行小節</span>
           {[1, 2, 3, 4].map(n => (
             <button
               key={n}
@@ -111,7 +111,7 @@ const Play: React.FC<PlayProps> = ({ tabData }) => {
         <div className="w-px h-5 bg-zinc-200 hidden sm:block" />
 
         <div className="flex items-center gap-2">
-          <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">移調</span>
+          <span className="text-[10px] font-black text-zinc-400 tracking-widest">移調</span>
           <button
             onClick={() => setTransposeOffset(o => o - 1)}
             className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-zinc-100 text-zinc-600 hover:bg-zinc-200 font-bold text-xs transition-all"
