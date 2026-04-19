@@ -9,6 +9,7 @@ interface Measure {
   textTab: string;
   id: number;
   chord: string;
+  chordPositionIndex?: number;
   lyrics: string;
   notes: Note[];
 }

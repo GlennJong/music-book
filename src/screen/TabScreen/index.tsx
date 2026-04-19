@@ -14,7 +14,7 @@ const TabScreen: React.FC = () => {
   const [selectedTabIndex, setSelectedTabIndex] = useState<number>();
   const [mode, setMode] = useState<Mode>('management');
   const scriptUrl = localStorage.getItem('my_music_script_url');
-  const { tabList, addTabData, updateTabData, removeTabData} = useTabData(scriptUrl);
+  const { tabList, addTabData, updateTabData, removeTabData, syncFromCloud, isSyncingCloud, pendingTaskCount } = useTabData(scriptUrl);
 
   // Header 標題與描述
   let headerTitle = '樂譜管理';
@@ -44,9 +44,6 @@ const TabScreen: React.FC = () => {
             
           </div>
           <div className="flex gap-2 mt-2 md:mt-0">
-            {mode==='editor' && (
-              <button onClick={() => setMode('play')} className={`px-4 py-2 rounded-xl font-bold transition-colors bg-emerald-600 text-white shadow}`}>彈奏模式</button>
-            )}
             { mode === 'management' && (
               <button
                 className={`px-4 py-2 rounded-xl font-bold transition-colors ${mode==='management' ? 'bg-indigo-600 text-white shadow' : 'bg-zinc-100 text-zinc-500 hover:bg-indigo-50'}`}
@@ -76,11 +73,14 @@ const TabScreen: React.FC = () => {
 
       <main className="pl-8 pr-8">
         {mode === 'management' && (
-          <Management 
+          <Management
             tabList={tabList}
             onSelect={data => { setSelectedTabIndex(tabList.findIndex(t => t.id === data.id)); setMode('editor'); }}
+            onPlay={data => { setSelectedTabIndex(tabList.findIndex(t => t.id === data.id)); setMode('play'); }}
             onDelete={(id) => removeTabData(id)}
-            // reloadTabList={sync}
+            onSync={syncFromCloud}
+            isSyncingCloud={isSyncingCloud}
+            pendingTaskCount={pendingTaskCount}
           />
         )}
         { mode === 'editor' &&
