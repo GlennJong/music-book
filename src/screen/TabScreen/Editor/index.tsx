@@ -125,7 +125,7 @@ const Editor: React.FC<EditorProps> = ({ tabData, updateData, createData }) => {
     const copy = { ...target, id: maxId + 1, notes: target.notes.map(n => ({ ...n })) };
     setCurrentData(prev => ({
       ...prev,
-      measures: [...prev.measures.slice(0, idx + 1), copy, ...prev.measures.slice(idx + 1)],
+      measures: [...prev.measures, copy],
     }));
   };
 
