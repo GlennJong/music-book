@@ -130,12 +130,12 @@ const MeasureCard: React.FC<MeasureCardProps> = ({
         <button
           onClick={() => isEditMode && setChordPickerOpen(true)}
           disabled={!isEditMode}
-          className={`text-5xl font-black tracking-tighter uppercase leading-none transition-all disabled:pointer-events-none ${isEditMode ? 'text-indigo-600 hover:scale-105' : 'text-zinc-800'}`}
+          className={`text-5xl font-black tracking-tighter leading-none transition-all disabled:pointer-events-none ${isEditMode ? 'text-indigo-600 hover:scale-105' : 'text-zinc-800'}`}
         >
           {measure.chord || '-'}
         </button>
         <GuitarChordPhoto chord={chordPhoto} size="sm" isShowTitle={false} />
-        <div className="ml-auto text-[10px] font-black text-zinc-300 uppercase tracking-widest flex items-center gap-1">
+        <div className="ml-auto text-[10px] font-black text-zinc-300 tracking-widest flex items-center gap-1">
           <span className="material-icons text-[12px]">straighten</span>
           #{measure.id}
         </div>
@@ -148,7 +148,7 @@ const MeasureCard: React.FC<MeasureCardProps> = ({
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
             <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md flex flex-col max-h-[80vh] pointer-events-auto animate-in fade-in zoom-in duration-200">
               <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100">
-                <h3 className="font-black text-xl uppercase tracking-tighter">設定和弦</h3>
+                <h3 className="font-black text-xl tracking-tighter">設定和弦</h3>
                 <button onClick={() => setChordPickerOpen(false)} className="p-2 hover:bg-zinc-100 rounded-full text-zinc-400 flex items-center">
                   <span className="material-icons text-[22px]">close</span>
                 </button>
@@ -194,7 +194,7 @@ const MeasureCard: React.FC<MeasureCardProps> = ({
           <div className="absolute inset-0 flex flex-col justify-between py-6 pointer-events-none">
             {STRING_LABELS.map((label, i) => (
               <div key={i} className="relative w-full h-px bg-zinc-100">
-                <span className="absolute -left-16 -top-2.5 text-[10px] font-black text-zinc-400 w-12 text-right uppercase tracking-tighter">
+                <span className="absolute -left-16 -top-2.5 text-[10px] font-black text-zinc-400 w-12 text-right tracking-tighter">
                   {label}
                 </span>
               </div>
@@ -278,7 +278,7 @@ const MeasureCard: React.FC<MeasureCardProps> = ({
         <div className="mt-12 pt-10 border-t-2 border-zinc-50 flex flex-col gap-4">
           <div className="flex items-center gap-3 px-2">
             <span className="material-icons text-[16px] text-zinc-400">notes</span>
-            <span className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">小節歌詞 (Lyrics)</span>
+            <span className="text-[10px] font-black text-zinc-400 tracking-widest">小節歌詞 (Lyrics)</span>
           </div>
           <textarea
             disabled={!isEditMode}

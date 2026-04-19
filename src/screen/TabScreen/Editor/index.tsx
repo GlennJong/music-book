@@ -195,7 +195,7 @@ const Editor: React.FC<EditorProps> = ({ tabData, updateData, createData }) => {
               {isEditMode ? (
                 <input
                   ref={titleRef}
-                  className="text-xl font-black tracking-tight uppercase bg-transparent border-b-2 border-indigo-100 focus:border-indigo-400 outline-none w-full mb-1"
+                  className="text-xl font-black tracking-tight bg-transparent border-b-2 border-indigo-100 focus:border-indigo-400 outline-none w-full mb-1"
                   defaultValue={currentData.title}
                   placeholder="請輸入標題"
                   aria-label="樂譜標題"
@@ -207,9 +207,9 @@ const Editor: React.FC<EditorProps> = ({ tabData, updateData, createData }) => {
                   onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
                 />
               ) : (
-                <h3 className="text-xl font-black tracking-tight uppercase">{currentData.title}</h3>
+                <h3 className="text-xl font-black tracking-tight">{currentData.title}</h3>
               )}
-              <div className="flex gap-3 text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-0.5">
+              <div className="flex gap-3 text-[10px] font-bold text-zinc-400 tracking-widest mt-0.5">
                 {currentData.artist && <><span>{currentData.artist}</span><span>•</span></>}
                 {currentData.key && <span>{currentData.key}</span>}
                 {currentData.key && <span>•</span>}
@@ -266,7 +266,7 @@ const Editor: React.FC<EditorProps> = ({ tabData, updateData, createData }) => {
                   className="w-full mb-8 py-4 border-4 border-dashed border-indigo-200 rounded-4xl flex flex-col items-center justify-center gap-2 text-indigo-400 hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50/50 transition-all group"
                 >
                   <span className="material-icons text-[28px] group-hover:rotate-180 transition-transform duration-700">add</span>
-                  <span className="font-black uppercase tracking-[0.2em] text-sm">新增小節（最前面）</span>
+                  <span className="font-black tracking-[0.2em] text-sm">新增小節（最前面）</span>
                 </button>
               )}
 
@@ -308,7 +308,7 @@ const Editor: React.FC<EditorProps> = ({ tabData, updateData, createData }) => {
                   className="w-full py-12 border-4 border-dashed border-zinc-200 rounded-[3.5rem] flex flex-col items-center justify-center gap-5 text-zinc-300 hover:border-indigo-300 hover:text-indigo-500 hover:bg-indigo-50/50 transition-all group"
                 >
                   <span className="material-icons text-[48px] group-hover:rotate-180 transition-transform duration-700">add</span>
-                  <span className="font-black uppercase tracking-[0.3em] text-sm">Create Next Measure</span>
+                  <span className="font-black tracking-[0.3em] text-sm">Create Next Measure</span>
                 </button>
               )}
             </div>

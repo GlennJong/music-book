@@ -22,7 +22,7 @@ const FretPickerModal: React.FC<FretPickerModalProps> = ({ onClose, onSelect, ch
       <div className="fixed inset-0 z-55 bg-transparent" onClick={onClose} />
       <div className="absolute bottom-16 z-60 bg-white border border-zinc-200 rounded-[2.5rem] shadow-2xl p-7 w-72 animate-in slide-in-from-bottom-6 duration-300 ring-1 ring-black/5">
         <div className="flex justify-between items-center mb-5">
-          <span className="text-[10px] font-black uppercase text-zinc-400 tracking-[0.2em] px-1">Fret Selection</span>
+          <span className="text-[10px] font-black text-zinc-400 tracking-[0.2em] px-1">Fret Selection</span>
           <button onClick={onClose} className="text-zinc-300 hover:text-zinc-500 flex items-center">
             <span className="material-icons text-[16px]">close</span>
           </button>
