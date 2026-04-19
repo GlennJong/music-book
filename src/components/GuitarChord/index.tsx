@@ -10,10 +10,11 @@ interface PhotoProps {
 
 const GuitarChordPhoto: React.FC<PhotoProps> = ({ chord, isShowTitle = true, size = 'lg' }) => {
   if (!chord) return (
-    <div className="flex flex-col items-center justify-center h-64 w-48 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
-      <span className="material-icons text-slate-200 text-4xl mb-2">music_off</span>
-      <p className="text-slate-300 font-bold text-xs">無此指法</p>
-    </div>
+    <>-</>
+    // <div className="flex flex-col items-center justify-center h-64 w-48 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
+    //   <span className="material-icons text-slate-200 text-4xl mb-2">music_off</span>
+    //   <p className="text-slate-300 font-bold text-xs">無此指法</p>
+    // </div>
   );
 
   const { chord: pos, startFret = 1, barre, name } = chord;
