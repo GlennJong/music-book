@@ -20,7 +20,8 @@ interface MeasureCardProps {
   canMoveNext: boolean;
   onMovePrev: () => void;
   onMoveNext: () => void;
-  onCopy: () => void;
+  onCopyNext: () => void;
+  onCopyLast: () => void;
   onDelete: () => void;
   onUpdate: (measure: Measure) => void;
 }
@@ -30,7 +31,7 @@ const STRING_LABELS = ['E', 'B', 'G', 'D', 'A', 'E'];
 const MeasureCard: React.FC<MeasureCardProps> = ({
   measure, isEditMode, subdivisions,
   currentMeasure, currentBeat,
-  canMovePrev, canMoveNext, onMovePrev, onMoveNext, onCopy, onDelete,
+  canMovePrev, canMoveNext, onMovePrev, onMoveNext, onCopyNext, onCopyLast, onDelete,
   onUpdate,
 }) => {
   const [chordPickerOpen, setChordPickerOpen] = useState(false);
@@ -112,7 +113,8 @@ const MeasureCard: React.FC<MeasureCardProps> = ({
           onMovePrev={onMovePrev}
           onMoveNext={onMoveNext}
           onTextTab={() => setTextTabOpen(true)}
-          onCopy={onCopy}
+          onCopyNext={onCopyNext}
+          onCopyLast={onCopyLast}
           onDelete={onDelete}
         />
       )}
@@ -126,7 +128,7 @@ const MeasureCard: React.FC<MeasureCardProps> = ({
       )}
 
       {/* Chord section */}
-      <div className="flex items-center gap-4 mb-8 px-4">
+      <div className="flex items-center gap-4 mb-4 px-2">
         <button
           onClick={() => isEditMode && setChordPickerOpen(true)}
           disabled={!isEditMode}
@@ -185,7 +187,7 @@ const MeasureCard: React.FC<MeasureCardProps> = ({
       )}
 
       {/* Note grid */}
-      <div className={`relative bg-white border-2 rounded-[3.5rem] p-12 transition-all ${isActiveMeasure ? 'border-indigo-500 shadow-indigo-100 bg-indigo-50/10 ring-14 ring-indigo-50' : 'border-zinc-100'} ${isEditMode ? 'border-dashed border-amber-200' : ''}`}>
+      <div className={`relative bg-white border-2 rounded-xl p-12 transition-all ${isActiveMeasure ? 'border-indigo-500 shadow-indigo-100 bg-indigo-50/10 ring-14 ring-indigo-50' : 'border-zinc-100'} ${isEditMode ? 'border-dashed border-amber-200' : ''}`}>
         <div
           className="relative min-h-56 grid gap-0"
           style={{ gridTemplateColumns: `repeat(${subdivisions}, 1fr)` }}
@@ -275,11 +277,7 @@ const MeasureCard: React.FC<MeasureCardProps> = ({
         </div>
 
         {/* Lyrics */}
-        <div className="mt-12 pt-10 border-t-2 border-zinc-50 flex flex-col gap-4">
-          <div className="flex items-center gap-3 px-2">
-            <span className="material-icons text-[16px] text-zinc-400">notes</span>
-            <span className="text-[10px] font-black text-zinc-400 tracking-widest">小節歌詞 (Lyrics)</span>
-          </div>
+        <div className="mt-4 pt-4 border-t-2 border-zinc-50 flex flex-col gap-4">
           <textarea
             disabled={!isEditMode}
             value={measure.lyrics || ''}

@@ -117,16 +117,30 @@ const Editor: React.FC<EditorProps> = ({ tabData, updateData, createData }) => {
     setCurrentData(prev => ({ ...prev, measures: newMeasures }));
   };
 
-  const copyMeasure = (measureId: number) => {
+  const copyMeasure = (measureId: number, position: 'next' | 'end') => {
     const maxId = Math.max(0, ...currentData.measures.map(m => m.id));
     const idx = currentData.measures.findIndex(m => m.id === measureId);
     const target = currentData.measures[idx];
     if (!target) return;
     const copy = { ...target, id: maxId + 1, notes: target.notes.map(n => ({ ...n })) };
-    setCurrentData(prev => ({
-      ...prev,
-      measures: [...prev.measures, copy],
-    }));
+    setCurrentData(prev => {
+      let newMeasures;
+      if (position === 'next') {
+        // 插在當前 measure 後面
+        newMeasures = [
+          ...prev.measures.slice(0, idx + 1),
+          copy,
+          ...prev.measures.slice(idx + 1)
+        ];
+      } else {
+        // 插在最後
+        newMeasures = [...prev.measures, copy];
+      }
+      return {
+        ...prev,
+        measures: newMeasures,
+      };
+    });
   };
 
   const deleteMeasure = (measureId: number) =>
@@ -289,7 +303,8 @@ const Editor: React.FC<EditorProps> = ({ tabData, updateData, createData }) => {
                           canMoveNext={idx < currentData.measures.length - 1}
                           onMovePrev={() => moveMeasure(measure.id, 'prev')}
                           onMoveNext={() => moveMeasure(measure.id, 'next')}
-                          onCopy={() => copyMeasure(measure.id)}
+                          onCopyNext={() => copyMeasure(measure.id, 'next')}
+                          onCopyLast={() => copyMeasure(measure.id, 'end')}
                           onDelete={() => deleteMeasure(measure.id)}
                           onUpdate={updateMeasure}
                         />
