@@ -1,0 +1,334 @@
+{
+  "title": "Nothing's Gonna Change My Love For You",
+  "artist": "George Benson",
+  "key": "C",
+  "bpm": 80,
+  "subdivisions": 4,
+  "capo": 0,
+  "tuningName": "standard",
+  "measures": [
+    {
+      "id": 1,
+      "chord": "C",
+      "lyrics": "Intro",
+      "notes": [
+        {
+          "string": 6,
+          "fret": 0,
+          "beat": 0
+        },
+        {
+          "string": 3,
+          "fret": 0,
+          "beat": 0
+        },
+        {
+          "string": 2,
+          "fret": 1,
+          "beat": 0
+        },
+        {
+          "string": 1,
+          "fret": 0,
+          "beat": 0
+        },
+        {
+          "string": 3,
+          "fret": 0,
+          "beat": 1
+        },
+        {
+          "string": 2,
+          "fret": 1,
+          "beat": 1
+        },
+        {
+          "string": 1,
+          "fret": 0,
+          "beat": 1
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "chord": "F",
+      "lyrics": "",
+      "notes": []
+    },
+    {
+      "id": 3,
+      "chord": "G",
+      "lyrics": "",
+      "notes": []
+    },
+    {
+      "id": 4,
+      "chord": "E",
+      "lyrics": "",
+      "notes": []
+    },
+    {
+      "id": 5,
+      "chord": "Am",
+      "lyrics": "",
+      "notes": []
+    },
+    {
+      "id": 6,
+      "chord": "D/F#",
+      "lyrics": "",
+      "notes": []
+    },
+    {
+      "id": 7,
+      "chord": "Dm",
+      "lyrics": "",
+      "notes": []
+    },
+    {
+      "id": 8,
+      "chord": "G",
+      "lyrics": "",
+      "notes": []
+    },
+    {
+      "id": 9,
+      "chord": "C",
+      "lyrics": "If I had to live my life",
+      "notes": []
+    },
+    {
+      "id": 10,
+      "chord": "G/B",
+      "lyrics": "without you near me",
+      "notes": []
+    },
+    {
+      "id": 11,
+      "chord": "Am",
+      "lyrics": "",
+      "notes": []
+    },
+    {
+      "id": 12,
+      "chord": "G",
+      "lyrics": "The days would all be empty",
+      "notes": []
+    },
+    {
+      "id": 13,
+      "chord": "F",
+      "lyrics": "",
+      "notes": []
+    },
+    {
+      "id": 14,
+      "chord": "C/E",
+      "lyrics": "",
+      "notes": []
+    },
+    {
+      "id": 15,
+      "chord": "Dm",
+      "lyrics": "The nights would seem so long",
+      "notes": []
+    },
+    {
+      "id": 16,
+      "chord": "G",
+      "lyrics": "",
+      "notes": []
+    },
+    {
+      "id": 17,
+      "chord": "C",
+      "lyrics": "With you I see forever, oh, so clearly",
+      "notes": []
+    },
+    {
+      "id": 18,
+      "chord": "G/B",
+      "lyrics": "",
+      "notes": []
+    },
+    {
+      "id": 19,
+      "chord": "Am",
+      "lyrics": "",
+      "notes": []
+    },
+    {
+      "id": 20,
+      "chord": "G",
+      "lyrics": "I might have been in love before",
+      "notes": []
+    },
+    {
+      "id": 21,
+      "chord": "F",
+      "lyrics": "",
+      "notes": []
+    },
+    {
+      "id": 22,
+      "chord": "C/E",
+      "lyrics": "",
+      "notes": []
+    },
+    {
+      "id": 23,
+      "chord": "Dm",
+      "lyrics": "But it never felt this strong",
+      "notes": []
+    },
+    {
+      "id": 24,
+      "chord": "G",
+      "lyrics": "",
+      "notes": []
+    },
+    {
+      "id": 25,
+      "chord": "F",
+      "lyrics": "Our dreams are young and we both know",
+      "notes": []
+    },
+    {
+      "id": 26,
+      "chord": "C/E",
+      "lyrics": "",
+      "notes": []
+    },
+    {
+      "id": 27,
+      "chord": "C9sus",
+      "lyrics": "They'll take us where we want to go",
+      "notes": []
+    },
+    {
+      "id": 28,
+      "chord": "F",
+      "lyrics": "",
+      "notes": []
+    },
+    {
+      "id": 29,
+      "chord": "Dm",
+      "lyrics": "Hold me now, touch me now",
+      "notes": []
+    },
+    {
+      "id": 30,
+      "chord": "C/E",
+      "lyrics": "",
+      "notes": []
+    },
+    {
+      "id": 31,
+      "chord": "F",
+      "lyrics": "I don't want to live without you",
+      "notes": []
+    },
+    {
+      "id": 32,
+      "chord": "G",
+      "lyrics": "",
+      "notes": []
+    },
+    {
+      "id": 33,
+      "chord": "C",
+      "lyrics": "Nothing's gonna change my love for you",
+      "notes": []
+    },
+    {
+      "id": 34,
+      "chord": "F",
+      "lyrics": "",
+      "notes": []
+    },
+    {
+      "id": 35,
+      "chord": "G",
+      "lyrics": "You oughta know by now how much I love you",
+      "notes": []
+    },
+    {
+      "id": 36,
+      "chord": "E",
+      "lyrics": "",
+      "notes": []
+    },
+    {
+      "id": 37,
+      "chord": "Am",
+      "lyrics": "One thing you can be sure of",
+      "notes": []
+    },
+    {
+      "id": 38,
+      "chord": "D/F#",
+      "lyrics": "",
+      "notes": []
+    },
+    {
+      "id": 39,
+      "chord": "G",
+      "lyrics": "I'll never ask for more than your love",
+      "notes": []
+    },
+    {
+      "id": 40,
+      "chord": "C",
+      "lyrics": "Nothing's gonna change my love for you",
+      "notes": []
+    },
+    {
+      "id": 41,
+      "chord": "F",
+      "lyrics": "",
+      "notes": []
+    },
+    {
+      "id": 42,
+      "chord": "G",
+      "lyrics": "You oughta know by now how much I love you",
+      "notes": []
+    },
+    {
+      "id": 43,
+      "chord": "E",
+      "lyrics": "",
+      "notes": []
+    },
+    {
+      "id": 44,
+      "chord": "Am",
+      "lyrics": "The world may change my whole life through",
+      "notes": []
+    },
+    {
+      "id": 45,
+      "chord": "D/F#",
+      "lyrics": "",
+      "notes": []
+    },
+    {
+      "id": 46,
+      "chord": "G",
+      "lyrics": "But nothing's gonna change my love for you",
+      "notes": []
+    },
+    {
+      "id": 47,
+      "chord": "C",
+      "lyrics": "",
+      "notes": []
+    }
+  ],
+  "id": "8de6eeba-ba71-46ff-8e71-8d62c785d627",
+  "created_at": "2026-04-18T16:07:18.781Z",
+  "updated_at": "2026-04-20T02:44:03.677Z",
+  "tags": [],
+  "syncStatus": "synced"
+}

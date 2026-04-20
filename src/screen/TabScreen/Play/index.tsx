@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { GuitarChordPhoto } from '../../../components/GuitarChord';
 import { CHORD_DATA } from '../../../components/GuitarChord/constants';
-import { transposeTabData } from '../Editor/utils';
+import { transposeTabData, migrateTabData, decodeBeatChord } from '../Editor/utils';
 import type { TabData } from '../../../types';
 
 const STRING_LABELS = ['E', 'B', 'G', 'D', 'A', 'E'];
@@ -10,17 +10,17 @@ interface PlayProps {
   tabData: TabData;
 }
 
-const MeasureView: React.FC<{ measure: TabData['measures'][0]; subdivisions: number }> = ({ measure, subdivisions }) => {
+const MeasureView: React.FC<{ measure: TabData['measures'][0]; subdivisions: number; showChordPhoto: boolean }> = ({ measure, subdivisions, showChordPhoto }) => {
   const chordPositions = measure.chord ? CHORD_DATA[measure.chord] : null;
   const chordPhoto = chordPositions?.[measure.chordPositionIndex ?? 0] ?? null;
 
   return (
-    <div className="flex-1 min-w-[260px] bg-white rounded-3xl border border-zinc-100 p-6 space-y-4">
+    <div className="flex-1 min-w-[260px] rounded-3xl space-y-4">
       <div className="flex items-center gap-3">
         <span className="text-2xl font-black tracking-tighter text-zinc-800 leading-none">
           {measure.chord || '-'}
         </span>
-        <GuitarChordPhoto chord={chordPhoto} size="sm" isShowTitle={false} />
+        {showChordPhoto && <GuitarChordPhoto chord={chordPhoto} size="sm" isShowTitle={false} />}
         <span className="ml-auto text-[10px] font-black text-zinc-300 tracking-widest">#{measure.id}</span>
       </div>
 
@@ -29,6 +29,7 @@ const MeasureView: React.FC<{ measure: TabData['measures'][0]; subdivisions: num
           className="relative min-h-24 grid gap-0"
           style={{ gridTemplateColumns: `repeat(${subdivisions}, 1fr)` }}
         >
+          {/* String lines */}
           <div className="absolute inset-0 flex flex-col justify-between py-3 pointer-events-none">
             {STRING_LABELS.map((label, i) => (
               <div key={i} className="relative w-full h-px bg-zinc-200">
@@ -37,22 +38,50 @@ const MeasureView: React.FC<{ measure: TabData['measures'][0]; subdivisions: num
             ))}
           </div>
 
-          {[...Array(subdivisions)].map((_, b) => (
-            <div key={b} className="relative h-full border-l border-zinc-200/60 first:border-l-0 flex flex-col justify-between py-3 px-0.5">
-              {[...Array(6)].map((_, s) => {
-                const note = measure.notes.find(n => n.string === s + 1 && n.beat === b);
-                return (
-                  <div key={s} className="w-full h-1 flex items-center justify-center">
-                    {note != null && (
-                      <span className="w-6 h-6 rounded-full bg-zinc-900 text-white flex items-center justify-center font-mono font-bold text-[10px] shadow-sm">
-                        {note.fret}
+          {/* Beat columns */}
+          {[...Array(subdivisions)].map((_, b) => {
+            const beat = measure.notes[b] ?? null;
+            const frets = Array.isArray(beat) ? beat : null;
+            const beatChordRaw = typeof beat === 'string' ? beat : null;
+            const beatChordDecoded = beatChordRaw ? decodeBeatChord(beatChordRaw) : null;
+            const beatChordName = beatChordDecoded?.name ?? null;
+            const beatChordPhoto = beatChordName
+              ? (CHORD_DATA[beatChordName]?.[beatChordDecoded!.idx] ?? CHORD_DATA[beatChordName]?.[0] ?? null)
+              : null;
+
+            return (
+              <div key={b} className="relative h-full border-l border-zinc-200/60 first:border-l-0 flex flex-col justify-between py-3 px-0.5">
+                {/* Per-beat chord: photo or text badge */}
+                {beatChordName && (
+                  showChordPhoto ? (
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <GuitarChordPhoto chord={beatChordPhoto} size="xs" />
+                    </div>
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <span className="text-[9px] font-black text-violet-500 bg-violet-50 px-1.5 py-0.5 rounded-full leading-none">
+                        {beatChordName}
                       </span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          ))}
+                    </div>
+                  )
+                )}
+
+                {/* String cells (fret dots only) */}
+                {[...Array(6)].map((_, s) => {
+                  const fret = frets?.[s] ?? null;
+                  return (
+                    <div key={s} className="w-full h-1 flex items-center justify-center">
+                      {fret !== null && (
+                        <span className="w-4 h-4 rounded-full bg-zinc-900 text-white flex items-center justify-center font-mono font-bold text-[10px] shadow-sm">
+                          {fret}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -66,10 +95,13 @@ const MeasureView: React.FC<{ measure: TabData['measures'][0]; subdivisions: num
 const Play: React.FC<PlayProps> = ({ tabData }) => {
   const [measuresPerRow, setMeasuresPerRow] = useState(2);
   const [transposeOffset, setTransposeOffset] = useState(0);
+  const [showChordPhoto, setShowChordPhoto] = useState(true);
+
+  const migratedData = useMemo(() => migrateTabData(tabData), [tabData]);
 
   const displayData = useMemo(
-    () => transposeOffset !== 0 ? transposeTabData(tabData, transposeOffset) : tabData,
-    [tabData, transposeOffset]
+    () => transposeOffset !== 0 ? transposeTabData(migratedData, transposeOffset) : migratedData,
+    [migratedData, transposeOffset]
   );
 
   if (!tabData?.measures) return (
@@ -132,6 +164,16 @@ const Play: React.FC<PlayProps> = ({ tabData }) => {
             >重置</button>
           )}
         </div>
+
+        <div className="w-px h-5 bg-zinc-200 hidden sm:block" />
+
+        <button
+          onClick={() => setShowChordPhoto(v => !v)}
+          title={showChordPhoto ? '隱藏和弦圖' : '顯示和弦圖'}
+          className={`p-2 rounded-xl transition-colors flex items-center ${showChordPhoto ? 'bg-indigo-100 text-indigo-600' : 'bg-zinc-100 text-zinc-400 hover:bg-zinc-200'}`}
+        >
+          <span className="material-icons text-[18px]">piano</span>
+        </button>
       </div>
 
       <div className="px-6 py-8 space-y-8">
@@ -141,7 +183,7 @@ const Play: React.FC<PlayProps> = ({ tabData }) => {
           groups.map((group, gi) => (
             <div key={gi} className="flex gap-4 flex-wrap">
               {group.map(measure => (
-                <MeasureView key={measure.id} measure={measure} subdivisions={subdivisions} />
+                <MeasureView key={measure.id} measure={measure} subdivisions={subdivisions} showChordPhoto={showChordPhoto} />
               ))}
               {Array.from({ length: measuresPerRow - group.length }).map((_, i) => (
                 <div key={i} className="flex-1 min-w-[260px]" />

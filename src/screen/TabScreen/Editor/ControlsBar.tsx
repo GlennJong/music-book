@@ -122,7 +122,7 @@ const ControlsBar: React.FC<ControlsBarProps> = ({
 
     <Field label="小節分段 (Subdivisions)">
       <div className="flex items-center gap-2">
-        {[4, 8, 16].map(num => (
+        {[2, 4, 8].map(num => (
           <button
             key={num}
             onClick={() => isEditMode && onSubdivisionsChange(num)}

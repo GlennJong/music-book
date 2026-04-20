@@ -1,17 +1,14 @@
 
-interface Note {
-  string: number;
-  fret: number;
-  beat: number;
-}
+export type BeatFrets = (number | null)[];
+export type Beat = BeatFrets | string | null;
 
 interface Measure {
-  textTab: string;
   id: number;
   chord: string;
   chordPositionIndex?: number;
   lyrics: string;
-  notes: Note[];
+  notes: Beat[];
+  textTab?: string;
 }
 
 export type Data = {

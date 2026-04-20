@@ -5,7 +5,7 @@ import { CHORD_DATA, ROOT_NOTES, SUFFIXES, type ChordPosition } from './constant
 interface PhotoProps {
   chord: ChordPosition | null;
   isShowTitle?: boolean;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'xs' | 'sm' | 'md' | 'lg';
 }
 
 const GuitarChordPhoto: React.FC<PhotoProps> = ({ chord, isShowTitle = true, size = 'lg' }) => {
@@ -20,14 +20,15 @@ const GuitarChordPhoto: React.FC<PhotoProps> = ({ chord, isShowTitle = true, siz
   const cfg = {
     lg: { w: 120, h: 150, mt: 40, ml: 35, p: 'p-4', ts: 'text-xl', ms: 14, ls: 12 },
     md: { w: 60, h: 85, mt: 35, ml: 30, p: 'p-2', ts: 'text-lg', ms: 12, ls: 10 },
-    sm: { w: 40, h: 55, mt: 24, ml: 24, p: 'p-0', ts: 'text-sm', ms: 10, ls: 8 }
-  }[size];
+    sm: { w: 40, h: 55, mt: 24, ml: 24, p: 'p-0', ts: 'text-sm', ms: 10, ls: 8 },
+    xs: { w: 28, h: 36, mt: 16, ml: 16, p: 'p-0', ts: 'text-[10px]', ms: 7, ls: 5 },
+  }[size]!
 
   const SX = cfg.w / 5, SY = cfg.h / 5;
 
   return (
     <div className={`flex flex-col items-center bg-white rounded-xl border border-slate-100 animate-in fade-in zoom-in duration-300 ${cfg.p}`}>
-      {isShowTitle && <h3 className={`font-black text-slate-800 mb-4 tracking-tight ${cfg.ts}`}>{name}</h3>}
+      {isShowTitle && <h3 className={`font-black text-slate-800 mb-2 tracking-tight ${cfg.ts}`}>{name}</h3>}
       <svg width={cfg.w + cfg.ml + 20} height={cfg.h + cfg.mt + 20} viewBox={`0 0 ${cfg.w + cfg.ml + 20} ${cfg.h + cfg.mt + 20}`}>
         {startFret > 1 && <text x={cfg.ml - 4} y={cfg.mt + SY / 2 + (cfg.ls / 2)} textAnchor="end" fontSize={cfg.ls} fontWeight="bold" fill="#4F46E5">{startFret}fr</text>}
         {pos.map((f, i) => {

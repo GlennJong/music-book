@@ -88,13 +88,9 @@ const TabScreen: React.FC = () => {
             tabData={ selectedTabIndex === undefined ? undefined : tabList[selectedTabIndex]}
             updateData={async(data) => {
               await updateTabData(data.id, data);
-              setSelectedTabIndex(undefined);
-              setMode('management');
             }}
             createData={async(data) => {
-              addTabData(data);
-              setSelectedTabIndex(undefined);
-              setMode('management');
+              await addTabData(data);
             }}
           />
         }

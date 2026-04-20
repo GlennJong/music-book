@@ -4,8 +4,7 @@ import type { TabData } from '../../../types';
 import ControlsBar from './ControlsBar';
 import MeasureCard from './MeasureCard';
 import DataView from './DataView';
-import BottomBar from './BottomBar';
-import { deepCopy, parseChordNotes, getNoteMidi, transposeTabData } from './utils';
+import { deepCopy, parseChordNotes, transposeTabData, migrateTabData, STRING_BASE_MIDI, decodeBeatChord } from './utils';
 
 interface EditorProps {
   tabData?: TabData;
@@ -30,8 +29,10 @@ const defaultTabData: TabData = {
 };
 
 const Editor: React.FC<EditorProps> = ({ tabData, updateData, createData }) => {
-  const isNew = tabData === undefined;
-  const [currentData, setCurrentData] = useState<TabData>(isNew ? defaultTabData : deepCopy(tabData));
+  const isNewRef = useRef<boolean>(tabData === undefined);
+  const [currentData, setCurrentData] = useState<TabData>(() =>
+    tabData === undefined ? defaultTabData : migrateTabData(deepCopy(tabData))
+  );
   const [measuresPerRow, setMeasuresPerRow] = useState(2);
   const [history, setHistory] = useState<{ past: TabData[]; future: TabData[] }>({ past: [], future: [] });
   const [isEditMode, setIsEditMode] = useState(false);
@@ -40,6 +41,7 @@ const Editor: React.FC<EditorProps> = ({ tabData, updateData, createData }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentMeasure, setCurrentMeasure] = useState<number | null>(null);
   const [currentBeat, setCurrentBeat] = useState<number | null>(null);
+  const [showChordPhoto, setShowChordPhoto] = useState(true);
 
   const synth = useRef<Tone.PolySynth | null>(null);
   const reverb = useRef<Tone.Reverb | null>(null);
@@ -98,14 +100,16 @@ const Editor: React.FC<EditorProps> = ({ tabData, updateData, createData }) => {
     }));
   }, []);
 
+  const emptyMeasure = (id: number): Measure => ({ id, chord: '', lyrics: '', notes: [] });
+
   const addMeasureAtEnd = () => {
     const newId = currentData.measures.length > 0 ? Math.max(...currentData.measures.map(m => m.id)) + 1 : 1;
-    setCurrentData(prev => ({ ...prev, measures: [...prev.measures, { id: newId, chord: '', lyrics: '', notes: [], textTab: '' }] }));
+    setCurrentData(prev => ({ ...prev, measures: [...prev.measures, emptyMeasure(newId)] }));
   };
 
   const addMeasureAtStart = () => {
     const newId = currentData.measures.length > 0 ? Math.max(...currentData.measures.map(m => m.id)) + 1 : 1;
-    setCurrentData(prev => ({ ...prev, measures: [{ id: newId, chord: '', lyrics: '', notes: [], textTab: '' }, ...prev.measures] }));
+    setCurrentData(prev => ({ ...prev, measures: [emptyMeasure(newId), ...prev.measures] }));
   };
 
   const moveMeasure = (measureId: number, direction: 'prev' | 'next') => {
@@ -122,24 +126,16 @@ const Editor: React.FC<EditorProps> = ({ tabData, updateData, createData }) => {
     const idx = currentData.measures.findIndex(m => m.id === measureId);
     const target = currentData.measures[idx];
     if (!target) return;
-    const copy = { ...target, id: maxId + 1, notes: target.notes.map(n => ({ ...n })) };
+    const copy: Measure = {
+      ...target,
+      id: maxId + 1,
+      notes: target.notes.map(b => Array.isArray(b) ? [...b] : b),
+    };
     setCurrentData(prev => {
-      let newMeasures;
-      if (position === 'next') {
-        // 插在當前 measure 後面
-        newMeasures = [
-          ...prev.measures.slice(0, idx + 1),
-          copy,
-          ...prev.measures.slice(idx + 1)
-        ];
-      } else {
-        // 插在最後
-        newMeasures = [...prev.measures, copy];
-      }
-      return {
-        ...prev,
-        measures: newMeasures,
-      };
+      const newMeasures = position === 'next'
+        ? [...prev.measures.slice(0, idx + 1), copy, ...prev.measures.slice(idx + 1)]
+        : [...prev.measures, copy];
+      return { ...prev, measures: newMeasures };
     });
   };
 
@@ -154,7 +150,7 @@ const Editor: React.FC<EditorProps> = ({ tabData, updateData, createData }) => {
       Tone.Transport.cancel();
       setIsPlaying(false);
       setCurrentMeasure(null);
-      return;
+      if (startMeasureIdx === undefined) return;
     }
     if (isEditMode) setIsEditMode(false);
     await Tone.start();
@@ -164,29 +160,43 @@ const Editor: React.FC<EditorProps> = ({ tabData, updateData, createData }) => {
 
     const startIdx = startMeasureIdx ?? 0;
     currentData.measures.slice(startIdx).forEach((measure, relIdx) => {
-      if (measure.notes.length === 0 && measure.chord) {
-        const chordTones = parseChordNotes(measure.chord);
-        for (let b = 0; b < currentData.subdivisions; b++) {
+      // Iterate every subdivision; null beats fall back to the measure chord
+      for (let b = 0; b < currentData.subdivisions; b++) {
+        const beat = measure.notes[b] ?? null;
+        const timePos = `${relIdx}:${(b * 4) / currentData.subdivisions}`;
+
+        if (typeof beat === 'string') {
+          // Beat-level chord change
+          const chordTones = parseChordNotes(decodeBeatChord(beat).name);
+          if (chordTones.length === 0) continue;
           Tone.Transport.schedule(t => {
-            if (synth.current) {
-              synth.current.triggerAttackRelease(
-                chordTones.map(n => Tone.Frequency(60 + n, 'midi').toFrequency()), '8n', t
-              );
-            }
+            synth.current?.triggerAttackRelease(
+              chordTones.map(n => Tone.Frequency(60 + n, 'midi').toFrequency()), '8n', t
+            );
             Tone.Draw.schedule(() => { setCurrentMeasure(measure.id); setCurrentBeat(b); }, t);
-          }, `${relIdx}:${(b * 4) / currentData.subdivisions}`);
-        }
-      } else {
-        measure.notes.forEach(note => {
+          }, timePos);
+        } else if (Array.isArray(beat)) {
+          // BeatFrets: play each non-null fret
+          const freqs: number[] = [];
+          beat.forEach((fret, s) => {
+            if (fret !== null) freqs.push(Tone.Frequency(STRING_BASE_MIDI[s] + fret, 'midi').toFrequency());
+          });
+          if (freqs.length === 0) continue;
           Tone.Transport.schedule(t => {
-            if (synth.current) {
-              synth.current.triggerAttackRelease(
-                Tone.Frequency(getNoteMidi(note.string, note.fret), 'midi').toFrequency(), '8n', t
-              );
-            }
-            Tone.Draw.schedule(() => { setCurrentMeasure(measure.id); setCurrentBeat(note.beat); }, t);
-          }, `${relIdx}:${(note.beat * 4) / currentData.subdivisions}`);
-        });
+            synth.current?.triggerAttackRelease(freqs, '8n', t);
+            Tone.Draw.schedule(() => { setCurrentMeasure(measure.id); setCurrentBeat(b); }, t);
+          }, timePos);
+        } else if (measure.chord) {
+          // Null beat: fall back to measure chord
+          const chordTones = parseChordNotes(measure.chord);
+          if (chordTones.length === 0) continue;
+          Tone.Transport.schedule(t => {
+            synth.current?.triggerAttackRelease(
+              chordTones.map(n => Tone.Frequency(60 + n, 'midi').toFrequency()), '8n', t
+            );
+            Tone.Draw.schedule(() => { setCurrentMeasure(measure.id); setCurrentBeat(b); }, t);
+          }, timePos);
+        }
       }
     });
 
@@ -242,12 +252,15 @@ const Editor: React.FC<EditorProps> = ({ tabData, updateData, createData }) => {
                 </button>
               </div>
             )}
+            <button
+              onClick={() => setShowChordPhoto(v => !v)}
+              title={showChordPhoto ? '隱藏和弦圖' : '顯示和弦圖'}
+              className={`p-2.5 rounded-xl transition-colors flex items-center ${showChordPhoto ? 'bg-indigo-100 text-indigo-600' : 'bg-zinc-100 text-zinc-400 hover:bg-zinc-200'}`}
+            >
+              <span className="material-icons text-[20px]">piano</span>
+            </button>
             <button onClick={() => setViewMode(viewMode === 'render' ? 'data' : 'render')} className="p-2.5 rounded-xl bg-zinc-100 text-zinc-500 hover:bg-zinc-200 transition-colors flex items-center">
               <span className="material-icons text-[20px]">description</span>
-            </button>
-            <button onClick={() => isNew ? createData(currentData) : updateData(currentData)} className="p-2.5 rounded-xl bg-zinc-100 text-zinc-500 hover:bg-zinc-200 transition-colors flex items-center gap-1">
-              <span className="material-icons text-[20px]">save</span>
-              <span>{isNew ? 'Create' : 'Update'}</span>
             </button>
           </div>
         </div>
@@ -277,7 +290,7 @@ const Editor: React.FC<EditorProps> = ({ tabData, updateData, createData }) => {
               {isEditMode && (
                 <button
                   onClick={addMeasureAtStart}
-                  className="w-full mb-8 py-4 border-4 border-dashed border-indigo-200 rounded-4xl flex flex-col items-center justify-center gap-2 text-indigo-400 hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50/50 transition-all group"
+                  className="w-full mb-4 py-4 border-4 border-dashed border-indigo-200 rounded-4xl flex flex-col items-center justify-center gap-2 text-indigo-400 hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50/50 transition-all group"
                 >
                   <span className="material-icons text-[28px] group-hover:rotate-180 transition-transform duration-700">add</span>
                   <span className="font-black tracking-[0.2em] text-sm">新增小節（最前面）</span>
@@ -288,7 +301,7 @@ const Editor: React.FC<EditorProps> = ({ tabData, updateData, createData }) => {
                 const rowMeasures = currentData.measures.slice(rowIdx * measuresPerRow, (rowIdx + 1) * measuresPerRow);
                 const blanks = measuresPerRow - rowMeasures.length;
                 return (
-                  <div key={rowIdx} className="flex gap-8 flex-wrap">
+                  <div key={rowIdx} className="flex gap-8 flex-wrap mb-4">
                     {rowMeasures.map((measure, colIdx) => {
                       const idx = rowIdx * measuresPerRow + colIdx;
                       return (
@@ -297,6 +310,7 @@ const Editor: React.FC<EditorProps> = ({ tabData, updateData, createData }) => {
                           measure={measure}
                           isEditMode={isEditMode}
                           subdivisions={currentData.subdivisions}
+                          showChordPhoto={showChordPhoto}
                           currentMeasure={currentMeasure}
                           currentBeat={currentBeat}
                           canMovePrev={idx > 0}
@@ -307,6 +321,7 @@ const Editor: React.FC<EditorProps> = ({ tabData, updateData, createData }) => {
                           onCopyLast={() => copyMeasure(measure.id, 'end')}
                           onDelete={() => deleteMeasure(measure.id)}
                           onUpdate={updateMeasure}
+                          onPlayFrom={() => playTab(idx)}
                         />
                       );
                     })}
@@ -320,10 +335,10 @@ const Editor: React.FC<EditorProps> = ({ tabData, updateData, createData }) => {
               {isEditMode && (
                 <button
                   onClick={addMeasureAtEnd}
-                  className="w-full py-12 border-4 border-dashed border-zinc-200 rounded-[3.5rem] flex flex-col items-center justify-center gap-5 text-zinc-300 hover:border-indigo-300 hover:text-indigo-500 hover:bg-indigo-50/50 transition-all group"
+                  className="w-full py-4 border-4 border-dashed border-indigo-200 rounded-4xl flex flex-col items-center justify-center gap-2 text-indigo-400 hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50/50 transition-all group"
                 >
-                  <span className="material-icons text-[48px] group-hover:rotate-180 transition-transform duration-700">add</span>
-                  <span className="font-black tracking-[0.3em] text-sm">Create Next Measure</span>
+                  <span className="material-icons text-[28px] group-hover:rotate-180 transition-transform duration-700">add</span>
+                  <span className="font-black tracking-[0.2em] text-sm">新增小節（最後面）</span>
                 </button>
               )}
             </div>
@@ -338,13 +353,49 @@ const Editor: React.FC<EditorProps> = ({ tabData, updateData, createData }) => {
         )}
       </main>
 
-      <BottomBar
-        isPlaying={isPlaying}
-        isEditMode={isEditMode}
-        historyPastLength={history.past.length}
-        onToggleEdit={() => { if (isPlaying) playTab(); setIsEditMode(prev => !prev); }}
-        onTogglePlay={() => playTab()}
-      />
+      <div className="fixed bottom-14 left-1/2 -translate-x-1/2 z-50 flex items-center gap-6">
+        <div className="bg-white/95 backdrop-blur-3xl px-12 py-7 rounded-4xl shadow-2xl border border-zinc-200/50 flex items-center gap-12 ring-1 ring-zinc-900/10">
+          <button
+            onClick={() => {
+              if (isPlaying) playTab();
+              if (isEditMode) {
+                if (isNewRef.current) {
+                  createData(currentData);
+                  isNewRef.current = false;
+                }
+                else updateData(currentData);
+              }
+              setIsEditMode(prev => !prev);
+            }}
+            className={`flex items-center gap-5 px-10 py-5 rounded-4xl font-black text-sm tracking-[0.2em] transition-all active:scale-95 ${isEditMode ? 'bg-amber-100 text-amber-800 ring-2 ring-amber-200 shadow-xl shadow-amber-100' : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200'}`}
+          >
+            <span className="material-icons text-[16px]">{isEditMode ? 'check' : 'layers'}</span>
+            {isEditMode ? 'FINISH' : 'EDIT'}
+          </button>
+
+          <button
+            onClick={() => playTab()}
+            disabled={isEditMode}
+            className={`w-12 h-12 rounded-[2.5rem] flex items-center justify-center transition-all shadow-2xl ${
+              isPlaying
+                ? 'bg-red-500 shadow-red-200 text-white animate-pulse'
+                : isEditMode
+                  ? 'bg-zinc-100 text-zinc-200 cursor-not-allowed shadow-none'
+                  : 'bg-zinc-950 text-white hover:bg-indigo-600 hover:-translate-y-2 shadow-indigo-100'
+            }`}
+          >
+            <span className="material-icons text-[32px]">{isPlaying ? 'stop' : 'play_arrow'}</span>
+          </button>
+
+          <div className="hidden xl:block border-l-2 border-zinc-100 pl-12 space-y-2 text-right">
+            <div className="flex items-center justify-end gap-3 text-emerald-500">
+              <span className="material-icons text-[14px]">check_circle</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] leading-none">Ready to Sync</span>
+            </div>
+            <p className="text-[10px] text-zinc-400 font-mono uppercase tracking-widest">History: {history.past.length} Steps</p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
