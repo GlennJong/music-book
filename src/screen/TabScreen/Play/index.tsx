@@ -1,8 +1,9 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { GuitarChordPhoto } from '../../../components/GuitarChord';
 import { CHORD_DATA } from '../../../components/GuitarChord/constants';
 import { transposeTabData, migrateTabData, decodeBeatChord } from '../Editor/utils';
 import type { TabData } from '../../../types';
+import { EyeScroller } from '../../../components/EyeScroller';
 
 const STRING_LABELS = ['E', 'B', 'G', 'D', 'A', 'E'];
 
@@ -29,7 +30,6 @@ const MeasureView: React.FC<{ measure: TabData['measures'][0]; subdivisions: num
           className="relative min-h-24 grid gap-0"
           style={{ gridTemplateColumns: `repeat(${subdivisions}, 1fr)` }}
         >
-          {/* String lines */}
           <div className="absolute inset-0 flex flex-col justify-between py-3 pointer-events-none">
             {STRING_LABELS.map((label, i) => (
               <div key={i} className="relative w-full h-px bg-zinc-200">
@@ -38,7 +38,6 @@ const MeasureView: React.FC<{ measure: TabData['measures'][0]; subdivisions: num
             ))}
           </div>
 
-          {/* Beat columns */}
           {[...Array(subdivisions)].map((_, b) => {
             const beat = measure.notes[b] ?? null;
             const frets = Array.isArray(beat) ? beat : null;
@@ -51,7 +50,6 @@ const MeasureView: React.FC<{ measure: TabData['measures'][0]; subdivisions: num
 
             return (
               <div key={b} className="relative h-full border-l border-zinc-200/60 first:border-l-0 flex flex-col justify-between py-3 px-0.5">
-                {/* Per-beat chord: photo or text badge */}
                 {beatChordName && (
                   showChordPhoto ? (
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -66,7 +64,6 @@ const MeasureView: React.FC<{ measure: TabData['measures'][0]; subdivisions: num
                   )
                 )}
 
-                {/* String cells (fret dots only) */}
                 {[...Array(6)].map((_, s) => {
                   const fret = frets?.[s] ?? null;
                   return (
@@ -96,6 +93,41 @@ const Play: React.FC<PlayProps> = ({ tabData }) => {
   const [measuresPerRow, setMeasuresPerRow] = useState(2);
   const [transposeOffset, setTransposeOffset] = useState(0);
   const [showChordPhoto, setShowChordPhoto] = useState(true);
+  const [eyeActive, setEyeActive] = useState(false);
+  const [eyeLoading, setEyeLoading] = useState(false);
+
+  const eyeRef = useRef<EyeScroller | null>(null);
+
+  useEffect(() => {
+    eyeRef.current = new EyeScroller('main-scroll-container', {
+      top: 0.2,
+      bottom: 0.45,
+      left: 0.05,
+      right: 0.05,
+      speed: 8,
+      frequency: 20,
+    });
+    return () => { eyeRef.current?.disable(); };
+  }, []);
+
+  const handleEyeToggle = async () => {
+    if (!eyeRef.current) return;
+    if (eyeActive) {
+      eyeRef.current.disable();
+      setEyeActive(false);
+    } else {
+      setEyeLoading(true);
+      try {
+        await eyeRef.current.enable();
+        eyeRef.current.start();
+        setEyeActive(true);
+      } catch (e) {
+        console.error('EyeScroller enable failed', e);
+      } finally {
+        setEyeLoading(false);
+      }
+    }
+  };
 
   const migratedData = useMemo(() => migrateTabData(tabData), [tabData]);
 
@@ -174,6 +206,56 @@ const Play: React.FC<PlayProps> = ({ tabData }) => {
         >
           <span className="material-icons text-[18px]">piano</span>
         </button>
+
+        <div className="w-px h-5 bg-zinc-200 hidden sm:block" />
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleEyeToggle}
+            disabled={eyeLoading}
+            title={eyeActive ? '關閉視線捲動' : '開啟視線捲動'}
+            className={`p-2 rounded-xl transition-colors flex items-center ${eyeActive ? 'bg-indigo-100 text-indigo-600' : 'bg-zinc-100 text-zinc-400 hover:bg-zinc-200'} disabled:opacity-50`}
+          >
+            <span className={`material-icons text-[18px] ${eyeLoading ? 'animate-spin' : ''}`}>
+              {eyeLoading ? 'sync' : 'visibility'}
+            </span>
+          </button>
+
+          {eyeActive && (
+            <>
+              <button
+                onClick={() => eyeRef.current?.adjust()}
+                title="校準視線"
+                className="p-2 rounded-xl bg-zinc-100 text-zinc-500 hover:bg-zinc-200 transition-colors flex items-center"
+              >
+                <span className="material-icons text-[18px]">track_changes</span>
+              </button>
+              <button
+                onClick={() => eyeRef.current?.hideDot()}
+                title="關閉視線"
+                className="p-2 rounded-xl bg-zinc-100 text-zinc-500 hover:bg-zinc-200 transition-colors flex items-center"
+              >
+                <span className="material-icons text-[18px]">adjust</span>
+                <span className="text-[12px]"> Hide</span>
+              </button>
+              <button
+                onClick={() => eyeRef.current?.showDot()}
+                title="顯示視線"
+                className="p-2 rounded-xl bg-zinc-100 text-zinc-500 hover:bg-zinc-200 transition-colors flex items-center"
+              >
+                <span className="material-icons text-[18px]">adjust</span>
+                <span className="text-[12px]"> Show</span>
+              </button>
+              <button
+                onClick={() => eyeRef.current?.refresh()}
+                title="清除校準數據"
+                className="p-2 rounded-xl bg-zinc-100 text-zinc-500 hover:bg-zinc-200 transition-colors flex items-center"
+              >
+                <span className="material-icons text-[18px]">refresh</span>
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       <div className="px-6 py-8 space-y-8">
