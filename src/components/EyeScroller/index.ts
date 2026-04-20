@@ -174,14 +174,14 @@ export class EyeScroller {
     return null;
   }
 
-  private _getStatus(): EyeScrollerStatus {
+  private _getStatus(zone: EyeScrollerStatus['zone']): EyeScrollerStatus {
     return {
       isEnabled: this._isEnabled,
       isLoaded: this._isLoaded,
       isTracking: this._isTracking,
       gazeX: this._gazeX,
       gazeY: this._gazeY,
-      zone: this._getZone(),
+      zone,
     };
   }
 
@@ -197,9 +197,13 @@ export class EyeScroller {
     else if (zone === 'left') target.scrollBy(-speed, 0);
     else if (zone === 'right') target.scrollBy(speed, 0);
 
-    const status = this._getStatus();
-    this._gazeCallbacks.forEach(cb => cb(status));
-    if (zone !== null) this._triggerCallbacks.forEach(cb => cb(status));
+    const hasGaze = this._gazeCallbacks.length > 0;
+    const hasTrigger = zone !== null && this._triggerCallbacks.length > 0;
+    if (hasGaze || hasTrigger) {
+      const status = this._getStatus(zone);
+      if (hasGaze) this._gazeCallbacks.forEach(cb => cb(status));
+      if (hasTrigger) this._triggerCallbacks.forEach(cb => cb(status));
+    }
   }
 
   private _loadScript(): Promise<void> {

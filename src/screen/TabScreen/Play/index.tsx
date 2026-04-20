@@ -149,7 +149,7 @@ const Play: React.FC<PlayProps> = ({ tabData }) => {
   );
 
   return (
-    <div className="min-h-screen bg-zinc-50 text-zinc-900 font-sans">
+    <div className="h-screen bg-zinc-50 text-zinc-900 font-sans">
       <div className="bg-white border-b border-zinc-100 px-6 py-5">
         <h1 className="text-2xl font-black tracking-tight">{title || '未命名'}</h1>
         <div className="flex flex-wrap gap-3 text-[11px] font-bold text-zinc-400 tracking-widest mt-1.5">
@@ -258,7 +258,7 @@ const Play: React.FC<PlayProps> = ({ tabData }) => {
         </div>
       </div>
 
-      <div className="px-6 py-8 space-y-8">
+      <div className="px-6 py-8 space-y-8 pb-24">
         {displayData.measures.length === 0 ? (
           <div className="text-center text-zinc-400 font-bold py-16">尚無小節</div>
         ) : (
