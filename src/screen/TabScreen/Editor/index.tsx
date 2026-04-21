@@ -160,13 +160,18 @@ const Editor: React.FC<EditorProps> = ({ tabData, updateData, createData }) => {
 
     const startIdx = startMeasureIdx ?? 0;
     currentData.measures.slice(startIdx).forEach((measure, relIdx) => {
-      // Iterate every subdivision; null beats fall back to the measure chord
+      // A measure "has notes" if any beat carries fret data or a beat-level chord.
+      // Only measures with no notes at all fall back to auto-playing the measure chord.
+      const hasNotes = measure.notes.some(b =>
+        typeof b === 'string' || (Array.isArray(b) && b.some(fret => fret !== null))
+      );
+
       for (let b = 0; b < currentData.subdivisions; b++) {
         const beat = measure.notes[b] ?? null;
         const timePos = `${relIdx}:${(b * 4) / currentData.subdivisions}`;
 
         if (typeof beat === 'string') {
-          // Beat-level chord change
+          // Beat-level chord
           const chordTones = parseChordNotes(decodeBeatChord(beat).name);
           if (chordTones.length === 0) continue;
           Tone.Transport.schedule(t => {
@@ -186,8 +191,8 @@ const Editor: React.FC<EditorProps> = ({ tabData, updateData, createData }) => {
             synth.current?.triggerAttackRelease(freqs, '8n', t);
             Tone.Draw.schedule(() => { setCurrentMeasure(measure.id); setCurrentBeat(b); }, t);
           }, timePos);
-        } else if (measure.chord) {
-          // Null beat: fall back to measure chord
+        } else if (measure.chord && !hasNotes) {
+          // Null beat in a note-free measure: auto-play the measure chord
           const chordTones = parseChordNotes(measure.chord);
           if (chordTones.length === 0) continue;
           Tone.Transport.schedule(t => {
@@ -197,6 +202,7 @@ const Editor: React.FC<EditorProps> = ({ tabData, updateData, createData }) => {
             Tone.Draw.schedule(() => { setCurrentMeasure(measure.id); setCurrentBeat(b); }, t);
           }, timePos);
         }
+        // else: null beat in a measure that has notes → silence
       }
     });
 
