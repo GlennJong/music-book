@@ -127,6 +127,16 @@ export class EyeScroller {
     this._loopId = null;
   }
 
+  updateOptions(options: EyeScrollerOptions): void {
+    const wasTracking = this._loopId !== null;
+    const frequencyChanged = options.frequency !== undefined && options.frequency !== this.opts.frequency;
+    this.opts = { ...this.opts, ...options };
+    if (wasTracking && frequencyChanged) {
+      this.stop();
+      this.start();
+    }
+  }
+
   refresh(): void {
     if (window.webgazer) {
       try {

@@ -95,20 +95,24 @@ const Play: React.FC<PlayProps> = ({ tabData }) => {
   const [showChordPhoto, setShowChordPhoto] = useState(true);
   const [eyeActive, setEyeActive] = useState(false);
   const [eyeLoading, setEyeLoading] = useState(false);
+  const [showEyeSettings, setShowEyeSettings] = useState(false);
+  const [eyeSettings, setEyeSettings] = useState({ top: 0.2, bottom: 0.45, speed: 8, frequency: 20 });
 
   const eyeRef = useRef<EyeScroller | null>(null);
 
   useEffect(() => {
     eyeRef.current = new EyeScroller('main-scroll-container', {
-      top: 0.2,
-      bottom: 0.45,
+      ...eyeSettings,
       left: 0.05,
       right: 0.05,
-      speed: 8,
-      frequency: 20,
     });
     return () => { eyeRef.current?.disable(); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    eyeRef.current?.updateOptions(eyeSettings);
+  }, [eyeSettings]);
 
   const handleEyeToggle = async () => {
     if (!eyeRef.current) return;
@@ -221,6 +225,14 @@ const Play: React.FC<PlayProps> = ({ tabData }) => {
             </span>
           </button>
 
+          <button
+            onClick={() => setShowEyeSettings(v => !v)}
+            title="視線捲動設定"
+            className={`p-2 rounded-xl transition-colors flex items-center ${showEyeSettings ? 'bg-indigo-100 text-indigo-600' : 'bg-zinc-100 text-zinc-400 hover:bg-zinc-200'}`}
+          >
+            <span className="material-icons text-[18px]">tune</span>
+          </button>
+
           {eyeActive && (
             <>
               <button
@@ -232,7 +244,7 @@ const Play: React.FC<PlayProps> = ({ tabData }) => {
               </button>
               <button
                 onClick={() => eyeRef.current?.hideDot()}
-                title="關閉視線"
+                title="關閉視線點"
                 className="p-2 rounded-xl bg-zinc-100 text-zinc-500 hover:bg-zinc-200 transition-colors flex items-center"
               >
                 <span className="material-icons text-[18px]">adjust</span>
@@ -240,7 +252,7 @@ const Play: React.FC<PlayProps> = ({ tabData }) => {
               </button>
               <button
                 onClick={() => eyeRef.current?.showDot()}
-                title="顯示視線"
+                title="顯示視線點"
                 className="p-2 rounded-xl bg-zinc-100 text-zinc-500 hover:bg-zinc-200 transition-colors flex items-center"
               >
                 <span className="material-icons text-[18px]">adjust</span>
@@ -257,6 +269,35 @@ const Play: React.FC<PlayProps> = ({ tabData }) => {
           )}
         </div>
       </div>
+
+      {showEyeSettings && (
+        <div className="px-6 py-4 bg-white border-b border-zinc-100 flex flex-wrap gap-6">
+          {(
+            [
+              { key: 'top',       label: '上觸發區',  min: 0.05, max: 0.5,  step: 0.05, fmt: (v: number) => `${Math.round(v * 100)}%` },
+              { key: 'bottom',    label: '下觸發區',  min: 0.05, max: 0.5,  step: 0.05, fmt: (v: number) => `${Math.round(v * 100)}%` },
+              { key: 'speed',     label: '移動速度',  min: 1,    max: 30,   step: 1,    fmt: (v: number) => `${v} px` },
+              { key: 'frequency', label: '更新頻率',  min: 5,    max: 60,   step: 1,    fmt: (v: number) => `${v} Hz` },
+            ] as const
+          ).map(({ key, label, min, max, step, fmt }) => (
+            <label key={key} className="flex flex-col gap-1.5 min-w-[140px]">
+              <div className="flex justify-between text-[10px] font-black text-zinc-400 tracking-widest">
+                <span>{label}</span>
+                <span className="text-indigo-500">{fmt(eyeSettings[key])}</span>
+              </div>
+              <input
+                type="range"
+                min={min}
+                max={max}
+                step={step}
+                value={eyeSettings[key]}
+                onChange={e => setEyeSettings(prev => ({ ...prev, [key]: key === 'top' || key === 'bottom' ? parseFloat(e.target.value) : parseInt(e.target.value) }))}
+                className="w-full accent-indigo-500"
+              />
+            </label>
+          ))}
+        </div>
+      )}
 
       <div className="px-6 py-8 space-y-8 pb-24">
         {displayData.measures.length === 0 ? (

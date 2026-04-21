@@ -228,7 +228,7 @@ const Editor: React.FC<EditorProps> = ({ tabData, updateData, createData }) => {
                     if (titleRef.current && titleRef.current.value !== currentData.title)
                       setCurrentData({ ...currentData, title: titleRef.current.value });
                   }}
-                  onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                  onKeyDown={e => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) (e.target as HTMLInputElement).blur(); }}
                 />
               ) : (
                 <h3 className="text-xl font-black tracking-tight">{currentData.title}</h3>

@@ -38,8 +38,10 @@ export const useTabData = (scriptUrl: string | null) => {
   const [isSyncingCloud, setIsSyncingCloud] = useState(false);
   const processingRef = useRef(false);
   const pendingTasksRef = useRef(pendingTasks);
+  const tabListRef = useRef(tabList);
 
   useEffect(() => { pendingTasksRef.current = pendingTasks; }, [pendingTasks]);
+  useEffect(() => { tabListRef.current = tabList; }, [tabList]);
 
   // Persist to localStorage whenever tabList or pendingTasks change
   useEffect(() => {
@@ -73,6 +75,14 @@ export const useTabData = (scriptUrl: string | null) => {
               const local = localMap.get(cloudItem.id);
               if (!local) return { ...cloudItem, syncStatus: 'synced' as const };
               if (cloudItem.updated_at === local.updated_at) return { ...cloudItem, syncStatus: 'synced' as const };
+
+              // Cross-device sync: compare timestamps to pick the newer version
+              const hasPendingEdit = pendingTasksRef.current.some(t => t.targetId === cloudItem.id && t.action === 'edit');
+              if (hasPendingEdit) return { ...local, syncStatus: 'pending' as const };
+
+              const cloudTime = new Date(cloudItem.updated_at).getTime();
+              const localTime = new Date(local.updated_at).getTime();
+              if (cloudTime > localTime) return { ...cloudItem, syncStatus: 'synced' as const };
               return { ...local, syncStatus: 'pending' as const };
             });
 
@@ -186,23 +196,23 @@ export const useTabData = (scriptUrl: string | null) => {
   }, []);
 
   const updateTabData = useCallback(async (id: string, data: Partial<Omit<TabData, 'id' | 'syncStatus'>>) => {
-    setTabList(current => {
-      const index = current.findIndex(t => t.id === id);
-      if (index === -1) return current;
-      const updated = { ...current[index], ...data, updated_at: new Date().toISOString(), syncStatus: 'pending' as const };
-      const next = [...current];
-      next[index] = updated;
-      const rawData: RawData = {
-        id: updated.id, title: updated.title, artist: updated.artist, key: updated.key,
-        bpm: updated.bpm, subdivisions: updated.subdivisions, capo: updated.capo,
-        tuningName: updated.tuningName, measures: JSON.stringify(updated.measures),
-        created_at: updated.created_at, updated_at: updated.updated_at,
-      };
-      setTimeout(() => {
-        setPendingTasks(prev => [...prev, { id: crypto.randomUUID(), action: 'edit', targetId: id, data: rawData, timestamp: Date.now() }]);
-      }, 0);
-      return next;
-    });
+    const current = tabListRef.current;
+    const index = current.findIndex(t => t.id === id);
+    if (index === -1) return;
+
+    const updated: TabData = { ...current[index], ...data, updated_at: new Date().toISOString(), syncStatus: 'pending' };
+    const next = [...current];
+    next[index] = updated;
+    const rawData: RawData = {
+      id: updated.id, title: updated.title, artist: updated.artist, key: updated.key,
+      bpm: updated.bpm, subdivisions: updated.subdivisions, capo: updated.capo,
+      tuningName: updated.tuningName, measures: JSON.stringify(updated.measures),
+      created_at: updated.created_at, updated_at: updated.updated_at,
+    };
+
+    // Update localStorage immediately — both tabList and pendingTasks in the same synchronous call
+    setTabList(next);
+    setPendingTasks(prev => [...prev, { id: crypto.randomUUID(), action: 'edit', targetId: id, data: rawData, timestamp: Date.now() }]);
   }, []);
 
   const removeTabData = useCallback((id: string) => {
@@ -219,12 +229,31 @@ export const useTabData = (scriptUrl: string | null) => {
       const cloud: any[] = await fetchScript(scriptUrl);
       const cloudParsed: TabData[] = cloud.map(d => parseMeasures({ ...(d as TabData), syncStatus: 'synced' }));
       setTabList(prev => {
-        const pendingMap = new Map(prev.filter(t => t.syncStatus !== 'synced').map(t => [t.id, t]));
+        const cloudMap = new Map(cloudParsed.map(t => [t.id, t]));
         const merged = [...cloudParsed];
-        pendingMap.forEach((val, key) => {
-          const idx = merged.findIndex(t => t.id === key);
-          if (idx >= 0) merged[idx] = val; else merged.unshift(val);
+
+        prev.forEach(localItem => {
+          const cloud = cloudMap.get(localItem.id);
+          if (!cloud) {
+            // Local-only item (pending create or delete not yet synced)
+            merged.unshift(localItem);
+            return;
+          }
+          // Cross-device: prefer local only if it has a pending task or is actually newer
+          const hasPendingEdit = pendingTasksRef.current.some(t => t.targetId === localItem.id && t.action === 'edit');
+          if (hasPendingEdit) {
+            const idx = merged.findIndex(t => t.id === localItem.id);
+            if (idx >= 0) merged[idx] = { ...localItem, syncStatus: 'pending' };
+          } else {
+            const cloudTime = new Date(cloud.updated_at).getTime();
+            const localTime = new Date(localItem.updated_at).getTime();
+            if (localTime > cloudTime) {
+              const idx = merged.findIndex(t => t.id === localItem.id);
+              if (idx >= 0) merged[idx] = { ...localItem, syncStatus: 'pending' };
+            }
+          }
         });
+
         return merged.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       });
     } catch (e) {
