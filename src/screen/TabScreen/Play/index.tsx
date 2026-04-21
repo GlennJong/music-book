@@ -17,15 +17,15 @@ const MeasureView: React.FC<{ measure: TabData['measures'][0]; subdivisions: num
 
   return (
     <div className="flex-1 min-w-[260px] rounded-3xl space-y-4">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 h-[100px]">
         <span className="text-2xl font-black tracking-tighter text-zinc-800 leading-none">
           {measure.chord || '-'}
         </span>
-        {showChordPhoto && <GuitarChordPhoto chord={chordPhoto} size="sm" isShowTitle={false} />}
+        {showChordPhoto && chordPhoto && <GuitarChordPhoto chord={chordPhoto} size="sm" isShowTitle={false} />}
         <span className="ml-auto text-[10px] font-black text-zinc-300 tracking-widest">#{measure.id}</span>
       </div>
 
-      <div className="relative bg-zinc-50 rounded-2xl p-5 pl-8">
+      <div className="relative bg-zinc-50 rounded-2xl p-5 py-2 pl-8">
         <div
           className="relative min-h-24 grid gap-0"
           style={{ gridTemplateColumns: `repeat(${subdivisions}, 1fr)` }}
