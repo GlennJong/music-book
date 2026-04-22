@@ -6,19 +6,17 @@ export const fetchScript = async (url: string, method: 'GET' | 'POST' = 'GET', b
   const options: RequestInit = { method };
   if (method === 'POST' && body) options.body = JSON.stringify(body);
   const res = await fetch(url, options);
-  
-  // Try to parse JSON, if fails, return empty array (assuming success for POST)
+
+  if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+
+  const text = await res.text();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let json: any = {};
-  const text = await res.text();
   try {
     json = JSON.parse(text);
-  } catch (e) {
-    if (method === 'POST') {
-        return []; // Assume success for write operations that return text
-    }
-    console.error("Failed to parse response", text);
-    throw e;
+  } catch {
+    if (method === 'POST') return []; // Non-JSON success response is OK for writes
+    throw new Error(`Invalid JSON response: ${text.slice(0, 100)}`);
   }
   
   // Safety check: ensure data exists and is an array

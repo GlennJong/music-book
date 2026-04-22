@@ -7,6 +7,7 @@ interface ManagementProps {
   onPlay: (data: TabData) => void;
   onDelete: (id: string) => void;
   onSync?: () => void;
+  isLoading?: boolean;
   isSyncingCloud?: boolean;
   pendingTaskCount?: number;
 }
@@ -20,7 +21,7 @@ const SyncBadge: React.FC<{ status?: SyncStatus }> = ({ status }) => {
   );
 };
 
-const Management: React.FC<ManagementProps> = ({ tabList, onSelect, onPlay, onDelete, onSync, isSyncingCloud, pendingTaskCount }) => {
+const Management: React.FC<ManagementProps> = ({ tabList, onSelect, onPlay, onDelete, onSync, isLoading, isSyncingCloud, pendingTaskCount }) => {
   return (
     <div className="p-8 max-w-3xl mx-auto">
       <div className="flex items-center justify-between mb-8">
@@ -50,10 +51,10 @@ const Management: React.FC<ManagementProps> = ({ tabList, onSelect, onPlay, onDe
 
       {tabList.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 text-zinc-300 gap-3">
-          {isSyncingCloud ? (
+          {(isLoading || isSyncingCloud) ? (
             <>
               <span className="w-8 h-8 rounded-full border-4 border-zinc-200 border-t-indigo-400 animate-spin" />
-              <span className="font-bold text-sm">載入雲端資料中…</span>
+              <span className="font-bold text-sm">{isLoading ? '載入資料中…' : '載入雲端資料中…'}</span>
             </>
           ) : (
             <>

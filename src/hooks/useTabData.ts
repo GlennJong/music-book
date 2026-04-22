@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { fetchScript } from './fetch';
+import { dbGet, dbPut } from '../utils/db';
 import type { TabData, RawData } from '../types';
 
 type SyncAction = 'add' | 'edit' | 'delete';
@@ -17,102 +18,78 @@ const parseMeasures = (item: TabData): TabData => ({
   measures: typeof item.measures === 'string' ? JSON.parse(item.measures as unknown as string) : item.measures,
 });
 
+const migrateFromLocalStorage = async (): Promise<{ tabs: TabData[]; tasks: SyncTask[] }> => {
+  try {
+    const rawTabs = localStorage.getItem('local_tabData');
+    const rawTasks = localStorage.getItem('musicbook_pending_tasks');
+    const tabs = rawTabs ? (JSON.parse(rawTabs) as TabData[]).map(parseMeasures) : [];
+    const tasks = rawTasks ? (JSON.parse(rawTasks) as SyncTask[]) : [];
+    if (tabs.length > 0 || tasks.length > 0) {
+      await dbPut([['local_tabData', tabs], ['musicbook_pending_tasks', tasks]]);
+      localStorage.removeItem('local_tabData');
+      localStorage.removeItem('musicbook_pending_tasks');
+    }
+    return { tabs, tasks };
+  } catch {
+    return { tabs: [], tasks: [] };
+  }
+};
+
 export const useTabData = (scriptUrl: string | null) => {
-  // Initialize immediately from localStorage — no loading wait
-  const [tabList, setTabList] = useState<TabData[]>(() => {
-    try {
-      const raw = localStorage.getItem('local_tabData');
-      if (!raw) return [];
-      return (JSON.parse(raw) as TabData[]).map(parseMeasures);
-    } catch { return []; }
-  });
-
-  const [pendingTasks, setPendingTasks] = useState<SyncTask[]>(() => {
-    try {
-      const saved = localStorage.getItem('musicbook_pending_tasks');
-      return saved ? JSON.parse(saved) : [];
-    } catch { return []; }
-  });
-
+  const [isLoading, setIsLoading] = useState(true);
+  const [tabList, setTabList] = useState<TabData[]>([]);
+  const [pendingTasks, setPendingTasks] = useState<SyncTask[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isSyncingCloud, setIsSyncingCloud] = useState(false);
+
   const processingRef = useRef(false);
-  const pendingTasksRef = useRef(pendingTasks);
-  const tabListRef = useRef(tabList);
+  const pendingTasksRef = useRef<SyncTask[]>([]);
+  const tabListRef = useRef<TabData[]>([]);
+  const syncFromCloudRef = useRef<() => Promise<void>>(async () => {});
 
   useEffect(() => { pendingTasksRef.current = pendingTasks; }, [pendingTasks]);
   useEffect(() => { tabListRef.current = tabList; }, [tabList]);
 
-  // Persist to localStorage whenever tabList or pendingTasks change
+  // Load from IndexedDB on mount, migrate from localStorage if needed
   useEffect(() => {
-    localStorage.setItem('local_tabData', JSON.stringify(tabList));
-  }, [tabList]);
-
-  useEffect(() => {
-    localStorage.setItem('musicbook_pending_tasks', JSON.stringify(pendingTasks));
-  }, [pendingTasks]);
-
-  // Background cloud sync on mount — merges cloud into existing local state
-  useEffect(() => {
-    const syncWithCloud = async () => {
-      if (!scriptUrl) return;
-      setIsSyncingCloud(true);
+    (async () => {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const cloud: any[] = await fetchScript(scriptUrl, 'GET');
-        const cloudParsed: TabData[] = cloud.map(item => parseMeasures(item as TabData));
+        let tabs = await dbGet<TabData[]>('local_tabData');
+        let tasks = await dbGet<SyncTask[]>('musicbook_pending_tasks');
 
-        setTabList(prev => {
-          const localMap = new Map(prev.map(t => [t.id, t]));
-          // Don't resurrect items that have a pending delete
-          const pendingDeleteIds = new Set(
-            pendingTasksRef.current.filter(t => t.action === 'delete').map(t => t.targetId)
-          );
+        // Migrate from localStorage if IndexedDB has no data yet
+        if (!tabs) {
+          const migrated = await migrateFromLocalStorage();
+          tabs = migrated.tabs;
+          tasks = migrated.tasks;
+        }
 
-          const merged: TabData[] = cloudParsed
-            .filter(c => !pendingDeleteIds.has(c.id))
-            .map(cloudItem => {
-              const local = localMap.get(cloudItem.id);
-              if (!local) return { ...cloudItem, syncStatus: 'synced' as const };
-              if (cloudItem.updated_at === local.updated_at) return { ...cloudItem, syncStatus: 'synced' as const };
-
-              // Cross-device sync: compare timestamps to pick the newer version
-              const hasPendingEdit = pendingTasksRef.current.some(t => t.targetId === cloudItem.id && t.action === 'edit');
-              if (hasPendingEdit) return { ...local, syncStatus: 'pending' as const };
-
-              const cloudTime = new Date(cloudItem.updated_at).getTime();
-              const localTime = new Date(local.updated_at).getTime();
-              if (cloudTime > localTime) return { ...cloudItem, syncStatus: 'synced' as const };
-              return { ...local, syncStatus: 'pending' as const };
-            });
-
-          // Keep local-only items (pending creates or deletes not yet synced)
-          prev.forEach(localItem => {
-            if (!cloudParsed.find(c => c.id === localItem.id)) {
-              merged.push({ ...localItem, syncStatus: 'pending' as const });
-            }
-          });
-
-          return merged;
-        });
+        setTabList(tabs ? tabs.map(parseMeasures) : []);
+        setPendingTasks(tasks ?? []);
       } catch (e) {
-        console.error('Background cloud sync failed', e);
+        console.error('Failed to load from IndexedDB', e);
       } finally {
-        setIsSyncingCloud(false);
+        setIsLoading(false);
       }
-    };
+    })();
+  }, []);
 
-    syncWithCloud();
-  }, [scriptUrl]);
+  // Atomic write to IndexedDB whenever data changes (after initial load)
+  useEffect(() => {
+    if (isLoading) return;
+    dbPut([['local_tabData', tabList], ['musicbook_pending_tasks', pendingTasks]]).catch(e => {
+      console.error('IndexedDB write failed', e);
+    });
+  }, [tabList, pendingTasks, isLoading]);
 
-  // Sync Logic — push pending tasks to cloud
-  const processQueue = useCallback(async () => {
-    if (!scriptUrl || pendingTasks.length === 0 || processingRef.current) return;
+  // processQueue: upload pending tasks to cloud, returns synced targetIds
+  const processQueue = useCallback(async (): Promise<string[]> => {
+    if (!scriptUrl || pendingTasksRef.current.length === 0 || processingRef.current) return [];
 
     processingRef.current = true;
     setIsSyncing(true);
 
-    const tasksToSync = [...pendingTasks];
+    const tasksToSync = [...pendingTasksRef.current];
     const completedTaskIds: string[] = [];
 
     try {
@@ -148,32 +125,100 @@ export const useTabData = (scriptUrl: string | null) => {
         }));
       }
 
+      const syncedTargetIds = tasksToSync.filter(t => completedTaskIds.includes(t.id)).map(t => t.targetId);
+      const failedTargetIds = tasksToSync.filter(t => !completedTaskIds.includes(t.id)).map(t => t.targetId);
+
       setPendingTasks(prev => prev.filter(t => !completedTaskIds.includes(t.id)));
-
-      const syncedIds = tasksToSync.filter(t => completedTaskIds.includes(t.id)).map(t => t.targetId);
-      const failedIds = tasksToSync.filter(t => !completedTaskIds.includes(t.id)).map(t => t.targetId);
-
       setTabList(prev => prev.map(t => {
-        if (syncedIds.includes(t.id)) return { ...t, syncStatus: 'synced' };
-        if (failedIds.includes(t.id)) return { ...t, syncStatus: 'error' };
+        if (syncedTargetIds.includes(t.id)) return { ...t, syncStatus: 'synced' };
+        if (failedTargetIds.includes(t.id)) return { ...t, syncStatus: 'error' };
         return t;
       }));
+
+      return syncedTargetIds;
     } catch (e) {
       console.error('Sync process critical error', e);
+      return [];
     } finally {
       processingRef.current = false;
       setIsSyncing(false);
     }
-  }, [scriptUrl, pendingTasks]);
+  }, [scriptUrl]);
 
-  // Periodic auto-sync of pending tasks
+  // syncFromCloud: processQueue first, then fetch and merge using timestamp comparison
+  const syncFromCloud = useCallback(async () => {
+    if (!scriptUrl) return;
+    setIsSyncingCloud(true);
+    try {
+      // Upload pending changes first, collect which targetIds were just synced
+      const justSyncedIds = new Set(await processQueue());
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const cloud: any[] = await fetchScript(scriptUrl, 'GET');
+      const cloudParsed: TabData[] = cloud.map(item => parseMeasures(item as TabData));
+
+      setTabList(prev => {
+        const localMap = new Map(prev.map(t => [t.id, t]));
+
+        // Items with pending deletes should not be resurrected
+        const pendingDeleteIds = new Set(
+          pendingTasksRef.current.filter(t => t.action === 'delete').map(t => t.targetId)
+        );
+
+        const merged: TabData[] = cloudParsed
+          .filter(c => !pendingDeleteIds.has(c.id))
+          .map(cloudItem => {
+            const local = localMap.get(cloudItem.id);
+            if (!local) return { ...cloudItem, syncStatus: 'synced' as const };
+
+            const cloudTime = new Date(cloudItem.updated_at).getTime();
+            const localTime = new Date(local.updated_at).getTime();
+
+            // Local is strictly newer → prefer local (needs sync or just synced)
+            if (localTime > cloudTime) {
+              const status = justSyncedIds.has(local.id) ? 'synced' as const : 'pending' as const;
+              return { ...local, syncStatus: status };
+            }
+
+            // Cloud same or newer → cloud wins
+            return { ...cloudItem, syncStatus: 'synced' as const };
+          });
+
+        // Keep local-only items (pending creates not yet in cloud)
+        prev.forEach(localItem => {
+          if (!cloudParsed.find(c => c.id === localItem.id)) {
+            merged.push({ ...localItem, syncStatus: pendingDeleteIds.has(localItem.id) ? 'pending' as const : 'pending' as const });
+          }
+        });
+
+        return merged.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      });
+    } catch (e) {
+      console.error('Sync failed', e);
+    } finally {
+      setIsSyncingCloud(false);
+    }
+  }, [scriptUrl, processQueue]);
+
+  // Keep ref to latest syncFromCloud for the startup effect
+  useEffect(() => { syncFromCloudRef.current = syncFromCloud; }, [syncFromCloud]);
+
+  // Startup: after loading, run processQueue then syncFromCloud (sequential, not concurrent)
+  const startupDone = useRef(false);
   useEffect(() => {
-    if (pendingTasks.length > 0 && !processingRef.current) processQueue();
+    if (isLoading || !scriptUrl || startupDone.current) return;
+    startupDone.current = true;
+    syncFromCloudRef.current();
+  }, [isLoading, scriptUrl]);
+
+  // Periodic auto-sync of pending tasks (skip while loading or startup sync is in progress)
+  useEffect(() => {
+    if (isLoading) return;
     const interval = setInterval(() => {
-      if (pendingTasks.length > 0 && !processingRef.current) processQueue();
+      if (pendingTasksRef.current.length > 0 && !processingRef.current) processQueue();
     }, 5000);
     return () => clearInterval(interval);
-  }, [pendingTasks.length, processQueue]);
+  }, [isLoading, processQueue]);
 
   // Actions
   const addTabData = useCallback(async (data: Omit<TabData, 'id' | 'updated_at' | 'syncStatus'> & { created_at?: string }) => {
@@ -210,7 +255,6 @@ export const useTabData = (scriptUrl: string | null) => {
       created_at: updated.created_at, updated_at: updated.updated_at,
     };
 
-    // Update localStorage immediately — both tabList and pendingTasks in the same synchronous call
     setTabList(next);
     setPendingTasks(prev => [...prev, { id: crypto.randomUUID(), action: 'edit', targetId: id, data: rawData, timestamp: Date.now() }]);
   }, []);
@@ -220,51 +264,9 @@ export const useTabData = (scriptUrl: string | null) => {
     setPendingTasks(prev => [...prev, { id: crypto.randomUUID(), action: 'delete', targetId: id, timestamp: Date.now() }]);
   }, []);
 
-  const syncFromCloud = useCallback(async () => {
-    if (!scriptUrl) return;
-    setIsSyncingCloud(true);
-    try {
-      await processQueue();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const cloud: any[] = await fetchScript(scriptUrl);
-      const cloudParsed: TabData[] = cloud.map(d => parseMeasures({ ...(d as TabData), syncStatus: 'synced' }));
-      setTabList(prev => {
-        const cloudMap = new Map(cloudParsed.map(t => [t.id, t]));
-        const merged = [...cloudParsed];
-
-        prev.forEach(localItem => {
-          const cloud = cloudMap.get(localItem.id);
-          if (!cloud) {
-            // Local-only item (pending create or delete not yet synced)
-            merged.unshift(localItem);
-            return;
-          }
-          // Cross-device: prefer local only if it has a pending task or is actually newer
-          const hasPendingEdit = pendingTasksRef.current.some(t => t.targetId === localItem.id && t.action === 'edit');
-          if (hasPendingEdit) {
-            const idx = merged.findIndex(t => t.id === localItem.id);
-            if (idx >= 0) merged[idx] = { ...localItem, syncStatus: 'pending' };
-          } else {
-            const cloudTime = new Date(cloud.updated_at).getTime();
-            const localTime = new Date(localItem.updated_at).getTime();
-            if (localTime > cloudTime) {
-              const idx = merged.findIndex(t => t.id === localItem.id);
-              if (idx >= 0) merged[idx] = { ...localItem, syncStatus: 'pending' };
-            }
-          }
-        });
-
-        return merged.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-      });
-    } catch (e) {
-      console.error('Sync failed', e);
-    } finally {
-      setIsSyncingCloud(false);
-    }
-  }, [scriptUrl, processQueue]);
-
   return {
     tabList,
+    isLoading,
     addTabData,
     removeTabData,
     updateTabData,

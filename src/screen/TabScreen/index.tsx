@@ -14,7 +14,7 @@ const TabScreen: React.FC = () => {
   const [selectedTabIndex, setSelectedTabIndex] = useState<number>();
   const [mode, setMode] = useState<Mode>('management');
   const scriptUrl = localStorage.getItem('my_music_script_url');
-  const { tabList, addTabData, updateTabData, removeTabData, syncFromCloud, isSyncingCloud, pendingTaskCount } = useTabData(scriptUrl);
+  const { tabList, isLoading, addTabData, updateTabData, removeTabData, syncFromCloud, isSyncingCloud, pendingTaskCount } = useTabData(scriptUrl);
 
   // Header 標題與描述
   let headerTitle = '樂譜管理';
@@ -79,6 +79,7 @@ const TabScreen: React.FC = () => {
             onPlay={data => { setSelectedTabIndex(tabList.findIndex(t => t.id === data.id)); setMode('play'); }}
             onDelete={(id) => removeTabData(id)}
             onSync={syncFromCloud}
+            isLoading={isLoading}
             isSyncingCloud={isSyncingCloud}
             pendingTaskCount={pendingTaskCount}
           />
