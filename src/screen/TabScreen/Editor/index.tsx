@@ -4,12 +4,13 @@ import type { TabData } from '../../../types';
 import ControlsBar from './ControlsBar';
 import MeasureCard from './MeasureCard';
 import DataView from './DataView';
-import { deepCopy, parseChordNotes, transposeTabData, migrateTabData, STRING_BASE_MIDI, decodeBeatChord } from './utils';
+import { deepCopy, parseChordNotes, transposeTabData, migrateTabData, STRING_BASE_MIDI, decodeBeatChord, encodeBeatChord } from './utils';
+import { CHORD_DATA } from '../../../components/GuitarChord/constants';
 
 interface EditorProps {
   tabData?: TabData;
   updateData: (data: TabData) => void;
-  createData: (data: TabData) => void;
+  createData: (data: TabData) => Promise<string>;
 }
 
 type Measure = TabData['measures'][0];
@@ -42,12 +43,14 @@ const Editor: React.FC<EditorProps> = ({ tabData, updateData, createData }) => {
   const [currentMeasure, setCurrentMeasure] = useState<number | null>(null);
   const [currentBeat, setCurrentBeat] = useState<number | null>(null);
   const [showChordPhoto, setShowChordPhoto] = useState(true);
+  const [showChordShapeMenu, setShowChordShapeMenu] = useState(false);
   const [volume, setVolume] = useState(6); // dB, range -20 to 12
 
   const synth = useRef<Tone.PolySynth | null>(null);
   const reverb = useRef<Tone.Reverb | null>(null);
   const titleRef = useRef<HTMLInputElement>(null);
   const currentDataRef = useRef<TabData>(currentData);
+  const chordShapeMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { currentDataRef.current = currentData; }, [currentData]);
 
@@ -75,6 +78,17 @@ const Editor: React.FC<EditorProps> = ({ tabData, updateData, createData }) => {
     if (synth.current) synth.current.volume.value = volume;
   }, [volume]);
 
+  useEffect(() => {
+    if (!showChordShapeMenu) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (chordShapeMenuRef.current && !chordShapeMenuRef.current.contains(e.target as Node)) {
+        setShowChordShapeMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showChordShapeMenu]);
+
   // --- History ---
 
   // commit: snapshot current state to history, then apply the update
@@ -86,6 +100,30 @@ const Editor: React.FC<EditorProps> = ({ tabData, updateData, createData }) => {
       future: [],
     }));
   }, []);
+
+  const applyChordShape = useCallback((shape: 'Open' | 'A' | 'E') => {
+    commit(prev => ({
+      ...prev,
+      measures: prev.measures.map(measure => {
+        const positions = CHORD_DATA[measure.chord];
+        let newIdx = measure.chordPositionIndex ?? 0;
+        if (positions && positions.length > 1) {
+          const found = positions.findIndex(p => p.baseShape === shape);
+          if (found !== -1) newIdx = found;
+        }
+        const newNotes = measure.notes.map(beat => {
+          if (typeof beat !== 'string') return beat;
+          const { name } = decodeBeatChord(beat);
+          const beatPositions = CHORD_DATA[name];
+          if (!beatPositions || beatPositions.length <= 1) return beat;
+          const foundBeat = beatPositions.findIndex(p => p.baseShape === shape);
+          return foundBeat !== -1 ? encodeBeatChord(name, foundBeat) : beat;
+        });
+        return { ...measure, chordPositionIndex: newIdx, notes: newNotes };
+      }),
+    }));
+    setShowChordShapeMenu(false);
+  }, [commit]);
 
   const undo = useCallback(() => {
     if (history.past.length === 0) return;
@@ -305,6 +343,28 @@ const Editor: React.FC<EditorProps> = ({ tabData, updateData, createData }) => {
             >
               <span className="material-icons text-[20px]">piano</span>
             </button>
+            <div className="relative" ref={chordShapeMenuRef}>
+              <button
+                onClick={() => setShowChordShapeMenu(v => !v)}
+                title="一鍵切換和弦型態"
+                className={`p-2.5 rounded-xl transition-colors flex items-center ${showChordShapeMenu ? 'bg-indigo-100 text-indigo-600' : 'bg-zinc-100 text-zinc-500 hover:bg-zinc-200'}`}
+              >
+                <span className="material-icons text-[20px]">tune</span>
+              </button>
+              {showChordShapeMenu && (
+                <div className="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-lg border border-zinc-200 py-1 z-50 min-w-30">
+                  {(['Open', 'A', 'E'] as const).map(shape => (
+                    <button
+                      key={shape}
+                      onClick={() => applyChordShape(shape)}
+                      className="w-full text-left px-4 py-2 text-sm hover:bg-zinc-50 transition-colors text-zinc-700"
+                    >
+                      {shape === 'Open' ? '開放和弦' : `封閉和弦 ${shape} 型`}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             <button onClick={() => setViewMode(viewMode === 'render' ? 'data' : 'render')} className="p-2.5 rounded-xl bg-zinc-100 text-zinc-500 hover:bg-zinc-200 transition-colors flex items-center">
               <span className="material-icons text-[20px]">description</span>
             </button>
@@ -406,7 +466,9 @@ const Editor: React.FC<EditorProps> = ({ tabData, updateData, createData }) => {
               if (isPlaying) playTab();
               if (isEditMode) {
                 if (isNewRef.current) {
-                  createData(currentData);
+                  createData(currentData).then(newId => {
+                    setCurrentData(prev => ({ ...prev, id: newId }));
+                  });
                   isNewRef.current = false;
                 }
                 else updateData(currentData);

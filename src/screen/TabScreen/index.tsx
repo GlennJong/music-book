@@ -91,7 +91,7 @@ const TabScreen: React.FC = () => {
               await updateTabData(data.id, data);
             }}
             createData={async(data) => {
-              await addTabData(data);
+              return await addTabData(data);
             }}
           />
         }
