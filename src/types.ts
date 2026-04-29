@@ -9,6 +9,7 @@ interface Measure {
   lyrics: string;
   notes: Beat[];
   textTab?: string;
+  breakAfter?: boolean;
 }
 
 export type Data = {

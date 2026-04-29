@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { GuitarChordPhoto } from '../../../components/GuitarChord';
 import { CHORD_DATA } from '../../../components/GuitarChord/constants';
-import { transposeTabData, migrateTabData, decodeBeatChord } from '../Editor/utils';
+import { transposeTabData, migrateTabData, decodeBeatChord, applyChordShapeToTabData, chunkMeasuresIntoRows } from '../Editor/utils';
 import type { TabData } from '../../../types';
 import { EyeScroller } from '../../../components/EyeScroller';
 
@@ -11,12 +11,52 @@ interface PlayProps {
   tabData: TabData;
 }
 
+type ChordShape = 'Open' | 'A' | 'E' | null;
+type EyeSettings = { top: number; bottom: number; speed: number; frequency: number };
+type StoredSettings = {
+  measuresPerRow: number;
+  transposeOffset: number;
+  showChordPhoto: boolean;
+  chordShape: ChordShape;
+  eyeSettings: EyeSettings;
+};
+
+const DEFAULT_SETTINGS: StoredSettings = {
+  measuresPerRow: 2,
+  transposeOffset: 0,
+  showChordPhoto: true,
+  chordShape: null,
+  eyeSettings: { top: 0.2, bottom: 0.45, speed: 8, frequency: 20 },
+};
+
+const loadPlaySettings = (id: string | undefined): StoredSettings => {
+  if (!id) return DEFAULT_SETTINGS;
+  try {
+    const raw = localStorage.getItem(`play_settings:${id}`);
+    if (!raw) return DEFAULT_SETTINGS;
+    const p = JSON.parse(raw);
+    return {
+      measuresPerRow: typeof p.measuresPerRow === 'number' ? p.measuresPerRow : DEFAULT_SETTINGS.measuresPerRow,
+      transposeOffset: typeof p.transposeOffset === 'number' ? p.transposeOffset : DEFAULT_SETTINGS.transposeOffset,
+      showChordPhoto: typeof p.showChordPhoto === 'boolean' ? p.showChordPhoto : DEFAULT_SETTINGS.showChordPhoto,
+      chordShape: p.chordShape === null || p.chordShape === 'Open' || p.chordShape === 'A' || p.chordShape === 'E'
+        ? p.chordShape
+        : DEFAULT_SETTINGS.chordShape,
+      eyeSettings: p.eyeSettings && typeof p.eyeSettings === 'object'
+        ? { ...DEFAULT_SETTINGS.eyeSettings, ...p.eyeSettings }
+        : DEFAULT_SETTINGS.eyeSettings,
+    };
+  } catch {
+    return DEFAULT_SETTINGS;
+  }
+};
+
 const MeasureView: React.FC<{ measure: TabData['measures'][0]; subdivisions: number; showChordPhoto: boolean }> = ({ measure, subdivisions, showChordPhoto }) => {
   const chordPositions = measure.chord ? CHORD_DATA[measure.chord] : null;
   const chordPhoto = chordPositions?.[measure.chordPositionIndex ?? 0] ?? null;
 
   return (
-    <div className="flex-1 min-w-[260px] rounded-3xl space-y-4">
+    <div className="flex-1 min-w-0 rounded-3xl space-y-4">
       <div className="flex items-center gap-3 h-[100px]">
         <span className="text-2xl font-black tracking-tighter text-zinc-800 leading-none">
           {measure.chord || '-'}
@@ -90,15 +130,55 @@ const MeasureView: React.FC<{ measure: TabData['measures'][0]; subdivisions: num
 };
 
 const Play: React.FC<PlayProps> = ({ tabData }) => {
-  const [measuresPerRow, setMeasuresPerRow] = useState(2);
-  const [transposeOffset, setTransposeOffset] = useState(0);
-  const [showChordPhoto, setShowChordPhoto] = useState(true);
+  const tabId = tabData?.id;
+
+  const [measuresPerRow, setMeasuresPerRow] = useState(() => loadPlaySettings(tabId).measuresPerRow);
+  const [transposeOffset, setTransposeOffset] = useState(() => loadPlaySettings(tabId).transposeOffset);
+  const [showChordPhoto, setShowChordPhoto] = useState(() => loadPlaySettings(tabId).showChordPhoto);
+  const [chordShape, setChordShape] = useState<ChordShape>(() => loadPlaySettings(tabId).chordShape);
+  const [showChordShapeMenu, setShowChordShapeMenu] = useState(false);
   const [eyeActive, setEyeActive] = useState(false);
   const [eyeLoading, setEyeLoading] = useState(false);
   const [showEyeSettings, setShowEyeSettings] = useState(false);
-  const [eyeSettings, setEyeSettings] = useState({ top: 0.2, bottom: 0.45, speed: 8, frequency: 20 });
+  const [eyeSettings, setEyeSettings] = useState<EyeSettings>(() => loadPlaySettings(tabId).eyeSettings);
 
   const eyeRef = useRef<EyeScroller | null>(null);
+  const chordShapeMenuRef = useRef<HTMLDivElement>(null);
+  const prevIdRef = useRef(tabId);
+  const skipSaveRef = useRef(true);
+
+  useEffect(() => {
+    if (prevIdRef.current === tabId) return;
+    prevIdRef.current = tabId;
+    skipSaveRef.current = true;
+    const s = loadPlaySettings(tabId);
+    setMeasuresPerRow(s.measuresPerRow);
+    setTransposeOffset(s.transposeOffset);
+    setShowChordPhoto(s.showChordPhoto);
+    setChordShape(s.chordShape);
+    setEyeSettings(s.eyeSettings);
+  }, [tabId]);
+
+  useEffect(() => {
+    if (skipSaveRef.current) {
+      skipSaveRef.current = false;
+      return;
+    }
+    if (!tabId) return;
+    const settings: StoredSettings = { measuresPerRow, transposeOffset, showChordPhoto, chordShape, eyeSettings };
+    localStorage.setItem(`play_settings:${tabId}`, JSON.stringify(settings));
+  }, [tabId, measuresPerRow, transposeOffset, showChordPhoto, chordShape, eyeSettings]);
+
+  useEffect(() => {
+    if (!showChordShapeMenu) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (chordShapeMenuRef.current && !chordShapeMenuRef.current.contains(e.target as Node)) {
+        setShowChordShapeMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showChordShapeMenu]);
 
   useEffect(() => {
     eyeRef.current = new EyeScroller('main-scroll-container', {
@@ -135,10 +215,11 @@ const Play: React.FC<PlayProps> = ({ tabData }) => {
 
   const migratedData = useMemo(() => migrateTabData(tabData), [tabData]);
 
-  const displayData = useMemo(
-    () => transposeOffset !== 0 ? transposeTabData(migratedData, transposeOffset) : migratedData,
-    [migratedData, transposeOffset]
-  );
+  const displayData = useMemo(() => {
+    let data = transposeOffset !== 0 ? transposeTabData(migratedData, transposeOffset) : migratedData;
+    if (chordShape) data = applyChordShapeToTabData(data, chordShape);
+    return data;
+  }, [migratedData, transposeOffset, chordShape]);
 
   if (!tabData?.measures) return (
     <div className="flex items-center justify-center h-64 text-zinc-400 font-bold">無譜面資料</div>
@@ -147,10 +228,7 @@ const Play: React.FC<PlayProps> = ({ tabData }) => {
   const { title, artist, bpm, capo, subdivisions } = displayData;
   const key = displayData.key;
 
-  const groups = Array.from(
-    { length: Math.ceil(displayData.measures.length / measuresPerRow) },
-    (_, i) => displayData.measures.slice(i * measuresPerRow, (i + 1) * measuresPerRow)
-  );
+  const groups = chunkMeasuresIntoRows(displayData.measures, measuresPerRow);
 
   return (
     <div className="h-screen bg-zinc-50 text-zinc-900 font-sans">
@@ -167,7 +245,7 @@ const Play: React.FC<PlayProps> = ({ tabData }) => {
       <div className="px-6 py-4 flex flex-wrap items-center gap-4 border-b border-zinc-100 bg-white/80">
         <div className="flex items-center gap-2">
           <span className="text-[10px] font-black text-zinc-400 tracking-widest">每行小節</span>
-          {[1, 2, 3, 4].map(n => (
+          {[1, 2, 3, 4, 6, 8].map(n => (
             <button
               key={n}
               onClick={() => setMeasuresPerRow(n)}
@@ -210,6 +288,40 @@ const Play: React.FC<PlayProps> = ({ tabData }) => {
         >
           <span className="material-icons text-[18px]">piano</span>
         </button>
+
+        <div className="relative" ref={chordShapeMenuRef}>
+          <button
+            onClick={() => setShowChordShapeMenu(v => !v)}
+            title="切換和弦型態"
+            className={`p-2 rounded-xl transition-colors flex items-center gap-1 ${chordShape || showChordShapeMenu ? 'bg-indigo-100 text-indigo-600' : 'bg-zinc-100 text-zinc-400 hover:bg-zinc-200'}`}
+          >
+            <span className="material-icons text-[18px]">grid_view</span>
+            {chordShape && (
+              <span className="text-[10px] font-black tracking-widest">
+                {chordShape === 'Open' ? 'OPEN' : chordShape}
+              </span>
+            )}
+          </button>
+          {showChordShapeMenu && (
+            <div className="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-lg border border-zinc-200 py-1 z-50 min-w-30">
+              <button
+                onClick={() => { setChordShape(null); setShowChordShapeMenu(false); }}
+                className={`w-full text-left px-4 py-2 text-sm hover:bg-zinc-50 transition-colors ${chordShape === null ? 'text-indigo-600 font-bold' : 'text-zinc-700'}`}
+              >
+                預設
+              </button>
+              {(['Open', 'A', 'E'] as const).map(shape => (
+                <button
+                  key={shape}
+                  onClick={() => { setChordShape(shape); setShowChordShapeMenu(false); }}
+                  className={`w-full text-left px-4 py-2 text-sm hover:bg-zinc-50 transition-colors ${chordShape === shape ? 'text-indigo-600 font-bold' : 'text-zinc-700'}`}
+                >
+                  {shape === 'Open' ? '開放和弦' : `封閉和弦 ${shape} 型`}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
 
         <div className="w-px h-5 bg-zinc-200 hidden sm:block" />
 
@@ -304,12 +416,12 @@ const Play: React.FC<PlayProps> = ({ tabData }) => {
           <div className="text-center text-zinc-400 font-bold py-16">尚無小節</div>
         ) : (
           groups.map((group, gi) => (
-            <div key={gi} className="flex gap-4 flex-wrap">
+            <div key={gi} className="flex gap-4">
               {group.map(measure => (
                 <MeasureView key={measure.id} measure={measure} subdivisions={subdivisions} showChordPhoto={showChordPhoto} />
               ))}
               {Array.from({ length: measuresPerRow - group.length }).map((_, i) => (
-                <div key={i} className="flex-1 min-w-[260px]" />
+                <div key={i} className="flex-1 min-w-0" />
               ))}
             </div>
           ))

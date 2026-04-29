@@ -21,7 +21,7 @@ export interface ChordPosition {
  * 包含 12 根音 * 10 調式之矩陣
  * ==========================================
  */
-export const CHORD_DATA: ChordDatabase = {
+export const DEFAULT_CHORD_DATA: ChordDatabase = {
   // --- C 系列 ---
   "C": [
     { name: "C (Open)", chord: [null, 3, 2, 0, 1, 0], baseShape: "Open" },
@@ -102,18 +102,28 @@ export const CHORD_DATA: ChordDatabase = {
 
   // --- F 系列 ---
   "F": [
+    { name: "F", chord: [1, 1, 2, 3, null, null], baseShape: "Open" },
     { name: "F (E 型)", chord: [1, 3, 3, 2, 1, 1], startFret: 1, barre: { fret: 1, from: 1, to: 6 }, baseShape: "E" },
     { name: "F (A 型)", chord: [null, 8, 10, 10, 10, 8], startFret: 8, barre: { fret: 8, from: 2, to: 6 }, baseShape: "A" }
   ],
-  "Fm": [{ name: "Fm (E 型)", chord: [1, 3, 3, 1, 1, 1], startFret: 1, barre: { fret: 1, from: 1, to: 6 }, baseShape: "E" }],
+  "Fm": [
+    { name: "Fm", chord: [1, 1, 1, 3, null, null], baseShape: "Open" },
+    { name: "Fm (E 型)", chord: [1, 3, 3, 1, 1, 1], startFret: 1, barre: { fret: 1, from: 1, to: 6 }, baseShape: "E" }
+  ],
   "Fdim": [{ name: "Fdim (E 型)", chord: [1, 2, 3, 1, null, null], startFret: 1, baseShape: "E" }],
   "Faug": [{ name: "Faug (Movable)", chord: [null, null, 3, 2, 2, 1], startFret: 1, baseShape: "Other" }],
   "Fmaj7": [{ name: "Fmaj7 (Open-style)", chord: [null, null, 3, 2, 1, 0], baseShape: "Other" }, { name: "Fmaj7 (E 型)", chord: [1, 3, 2, 2, 1, 1], startFret: 1, barre: { fret: 1, from: 1, to: 6 }, baseShape: "E" }],
   "Fm7": [{ name: "Fm7 (E 型)", chord: [1, 3, 1, 1, 1, 1], startFret: 1, barre: { fret: 1, from: 1, to: 6 }, baseShape: "E" }],
   "F7": [{ name: "F7 (E 型)", chord: [1, 3, 1, 2, 1, 1], startFret: 1, barre: { fret: 1, from: 1, to: 6 }, baseShape: "E" }],
   "Fm7b5": [{ name: "Fm7b5 (E 型)", chord: [1, 2, 1, 1, null, null], startFret: 1, baseShape: "E" }],
-  "Fsus2": [{ name: "Fsus2 (E 型)", chord: [1, 3, 3, 0, 1, 1], startFret: 1, baseShape: "E" }],
-  "Fsus4": [{ name: "Fsus4 (E 型)", chord: [1, 3, 3, 3, 1, 1], startFret: 1, barre: { fret: 1, from: 1, to: 6 }, baseShape: "E" }],
+  "Fsus2": [
+    { name: "Fsus2", chord: [1, 1, null, 3, null, null], baseShape: "Open" },
+    { name: "Fsus2 (E 型)", chord: [1, 3, 3, 0, 1, 1], startFret: 1, baseShape: "E" }
+  ],
+  "Fsus4": [
+    { name: "Fsus4", chord: [1, 1, 3, 3, null, null], baseShape: "Open" },
+    { name: "Fsus4 (E 型)", chord: [1, 3, 3, 3, 1, 1], startFret: 1, barre: { fret: 1, from: 1, to: 6 }, baseShape: "E" }
+  ],
 
   // --- F# 系列 ---
   "F#": [
@@ -206,6 +216,30 @@ export const CHORD_DATA: ChordDatabase = {
   "Bm7b5": [{ name: "Bm7b5 (A 型)", chord: [null, 2, 3, 2, 3, null], startFret: 2, baseShape: "A" }],
   "Bsus2": [{ name: "Bsus2 (A 型)", chord: [null, 2, 4, 4, 2, 2], startFret: 2, barre: { fret: 2, from: 2, to: 6 }, baseShape: "A" }],
   "Bsus4": [{ name: "Bsus4 (A 型)", chord: [null, 2, 4, 4, 5, 2], startFret: 2, barre: { fret: 2, from: 2, to: 6 }, baseShape: "A" }]
+};
+
+export const CHORD_DATA_STORAGE_KEY = 'chord_data_override';
+
+const loadStoredChordData = (): ChordDatabase | null => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(CHORD_DATA_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? parsed as ChordDatabase : null;
+  } catch {
+    return null;
+  }
+};
+
+export const CHORD_DATA: ChordDatabase = loadStoredChordData() ?? DEFAULT_CHORD_DATA;
+
+export const saveChordData = (data: ChordDatabase): void => {
+  localStorage.setItem(CHORD_DATA_STORAGE_KEY, JSON.stringify(data));
+};
+
+export const resetChordData = (): void => {
+  localStorage.removeItem(CHORD_DATA_STORAGE_KEY);
 };
 
 export const ROOT_NOTES = ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"];

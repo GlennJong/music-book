@@ -4,8 +4,7 @@ import type { TabData } from '../../../types';
 import ControlsBar from './ControlsBar';
 import MeasureCard from './MeasureCard';
 import DataView from './DataView';
-import { deepCopy, parseChordNotes, transposeTabData, migrateTabData, STRING_BASE_MIDI, decodeBeatChord, encodeBeatChord } from './utils';
-import { CHORD_DATA } from '../../../components/GuitarChord/constants';
+import { deepCopy, parseChordNotes, transposeTabData, migrateTabData, STRING_BASE_MIDI, decodeBeatChord, applyChordShapeToTabData, chunkMeasuresIntoRows } from './utils';
 
 interface EditorProps {
   tabData?: TabData;
@@ -102,26 +101,7 @@ const Editor: React.FC<EditorProps> = ({ tabData, updateData, createData }) => {
   }, []);
 
   const applyChordShape = useCallback((shape: 'Open' | 'A' | 'E') => {
-    commit(prev => ({
-      ...prev,
-      measures: prev.measures.map(measure => {
-        const positions = CHORD_DATA[measure.chord];
-        let newIdx = measure.chordPositionIndex ?? 0;
-        if (positions && positions.length > 1) {
-          const found = positions.findIndex(p => p.baseShape === shape);
-          if (found !== -1) newIdx = found;
-        }
-        const newNotes = measure.notes.map(beat => {
-          if (typeof beat !== 'string') return beat;
-          const { name } = decodeBeatChord(beat);
-          const beatPositions = CHORD_DATA[name];
-          if (!beatPositions || beatPositions.length <= 1) return beat;
-          const foundBeat = beatPositions.findIndex(p => p.baseShape === shape);
-          return foundBeat !== -1 ? encodeBeatChord(name, foundBeat) : beat;
-        });
-        return { ...measure, chordPositionIndex: newIdx, notes: newNotes };
-      }),
-    }));
+    commit(prev => applyChordShapeToTabData(prev, shape));
     setShowChordShapeMenu(false);
   }, [commit]);
 
@@ -403,40 +383,45 @@ const Editor: React.FC<EditorProps> = ({ tabData, updateData, createData }) => {
                 </button>
               )}
 
-              {Array.from({ length: Math.ceil(currentData.measures.length / measuresPerRow) }).map((_, rowIdx) => {
-                const rowMeasures = currentData.measures.slice(rowIdx * measuresPerRow, (rowIdx + 1) * measuresPerRow);
-                const blanks = measuresPerRow - rowMeasures.length;
-                return (
-                  <div key={rowIdx} className="flex gap-8 flex-wrap mb-4">
-                    {rowMeasures.map((measure, colIdx) => {
-                      const idx = rowIdx * measuresPerRow + colIdx;
-                      return (
-                        <MeasureCard
-                          key={measure.id}
-                          measure={measure}
-                          isEditMode={isEditMode}
-                          subdivisions={currentData.subdivisions}
-                          showChordPhoto={showChordPhoto}
-                          currentMeasure={currentMeasure}
-                          currentBeat={currentBeat}
-                          canMovePrev={idx > 0}
-                          canMoveNext={idx < currentData.measures.length - 1}
-                          onMovePrev={() => moveMeasure(measure.id, 'prev')}
-                          onMoveNext={() => moveMeasure(measure.id, 'next')}
-                          onCopyNext={() => copyMeasure(measure.id, 'next')}
-                          onCopyLast={() => copyMeasure(measure.id, 'end')}
-                          onDelete={() => deleteMeasure(measure.id)}
-                          onUpdate={updateMeasure}
-                          onPlayFrom={() => playTab(idx)}
-                        />
-                      );
-                    })}
-                    {Array.from({ length: blanks }).map((_, i) => (
-                      <div key={`blank-${i}`} className="flex-1 min-w-[320px]" />
-                    ))}
-                  </div>
-                );
-              })}
+              {(() => {
+                const rows = chunkMeasuresIntoRows(currentData.measures, measuresPerRow);
+                let cursor = 0;
+                return rows.map((rowMeasures, rowIdx) => {
+                  const startIdx = cursor;
+                  cursor += rowMeasures.length;
+                  const blanks = measuresPerRow - rowMeasures.length;
+                  return (
+                    <div key={rowIdx} className="flex gap-8 mb-4">
+                      {rowMeasures.map((measure, colIdx) => {
+                        const idx = startIdx + colIdx;
+                        return (
+                          <MeasureCard
+                            key={measure.id}
+                            measure={measure}
+                            isEditMode={isEditMode}
+                            subdivisions={currentData.subdivisions}
+                            showChordPhoto={showChordPhoto}
+                            currentMeasure={currentMeasure}
+                            currentBeat={currentBeat}
+                            canMovePrev={idx > 0}
+                            canMoveNext={idx < currentData.measures.length - 1}
+                            onMovePrev={() => moveMeasure(measure.id, 'prev')}
+                            onMoveNext={() => moveMeasure(measure.id, 'next')}
+                            onCopyNext={() => copyMeasure(measure.id, 'next')}
+                            onCopyLast={() => copyMeasure(measure.id, 'end')}
+                            onDelete={() => deleteMeasure(measure.id)}
+                            onUpdate={updateMeasure}
+                            onPlayFrom={() => playTab(idx)}
+                          />
+                        );
+                      })}
+                      {Array.from({ length: blanks }).map((_, i) => (
+                        <div key={`blank-${i}`} className="flex-1 min-w-0" />
+                      ))}
+                    </div>
+                  );
+                });
+              })()}
 
               {isEditMode && (
                 <button

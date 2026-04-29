@@ -157,7 +157,7 @@ const MeasureCard: React.FC<MeasureCardProps> = ({
   );
 
   return (
-    <div className="relative flex-1 min-w-[320px]">
+    <div className="relative flex-1 min-w-0">
       {isEditMode && (
         <MeasureActions
           canMovePrev={canMovePrev}
@@ -168,6 +168,8 @@ const MeasureCard: React.FC<MeasureCardProps> = ({
           onCopyNext={onCopyNext}
           onCopyLast={onCopyLast}
           onDelete={onDelete}
+          breakAfter={!!measure.breakAfter}
+          onToggleBreak={() => onUpdate({ ...measure, breakAfter: !measure.breakAfter })}
         />
       )}
 
@@ -196,31 +198,27 @@ const MeasureCard: React.FC<MeasureCardProps> = ({
       )}
 
       {/* Measure chord header */}
-      <div className="flex items-center gap-4 mb-4 px-4 h-[105px]">
+      <div className="flex items-center gap-4 px-4 h-[84px]">
         <button
           onClick={() => { if (isEditMode) setChordPickerOpen(true); else onPlayFrom?.(); }}
-          className={`text-5xl font-black tracking-tighter leading-none transition-all ${isEditMode ? 'text-indigo-600 hover:scale-105' : onPlayFrom ? 'text-zinc-800 hover:text-indigo-500 cursor-pointer' : 'text-zinc-800 cursor-default'}`}
+          className={`text-2xl font-black tracking-tighter leading-none transition-all ${isEditMode ? 'text-indigo-600 hover:scale-105' : onPlayFrom ? 'text-zinc-800 hover:text-indigo-500 cursor-pointer' : 'text-zinc-800 cursor-default'}`}
         >
           {measure.chord || '-'}
         </button>
-        {(showChordPhoto && chordPhoto) && <GuitarChordPhoto chord={chordPhoto} size="sm" isShowTitle={false} />}
-        <div className="ml-auto text-[10px] font-black text-zinc-300 tracking-widest flex items-center gap-1">
-          <span className="material-icons text-[12px]">straighten</span>
-          #{measure.id}
-        </div>
+        {(showChordPhoto && chordPhoto) && <GuitarChordPhoto chord={chordPhoto} size="xs" isShowTitle={false} />}
       </div>
 
       {/* Note grid */}
-      <div className={`relative bg-white border-2 rounded-xl p-12 pb-8 transition-all ${isActiveMeasure ? 'border-indigo-500 shadow-indigo-100 bg-indigo-50/10 ring-14 ring-indigo-50' : 'border-zinc-100'} ${isEditMode ? 'border-dashed border-amber-200' : ''}`}>
+      <div className={`relative bg-white border-2 rounded-sm p-5 pt-6 transition-all ${isActiveMeasure ? 'border-indigo-500 shadow-indigo-100 bg-indigo-50/10 ring-14 ring-indigo-50' : 'border-zinc-100'} ${isEditMode ? 'border-dashed border-amber-200' : ''}`}>
         <div
-          className="relative min-h-48 grid gap-0"
+          className="relative min-h-36 grid gap-0"
           style={{ gridTemplateColumns: `repeat(${subdivisions}, 1fr)` }}
         >
           {/* String lines */}
           <div className="absolute inset-0 flex flex-col justify-between py-2 pointer-events-none">
             {STRING_LABELS.map((label, i) => (
               <div key={i} className="relative w-full h-px bg-zinc-100">
-                <span className="absolute -left-16 -top-2.5 text-[10px] font-black text-zinc-400 w-12 text-right tracking-tighter">
+                <span className="absolute -left-12 -top-2.5 text-[10px] font-black text-zinc-400 w-12 text-right tracking-tighter">
                   {label}
                 </span>
               </div>
@@ -240,7 +238,7 @@ const MeasureCard: React.FC<MeasureCardProps> = ({
             return (
               <div key={b} className="relative h-full border-l border-zinc-100/50 first:border-l-0 flex flex-col justify-between py-2 px-1 group">
                 {/* Top area: beat chord badge + actions */}
-                <div className="absolute -top-9 left-0 right-0 flex items-center justify-center gap-1">
+                <div className="absolute -top-6 left-0 right-0 flex items-center justify-center gap-1">
                   {isEditMode &&
                     <>
                       {
@@ -250,7 +248,7 @@ const MeasureCard: React.FC<MeasureCardProps> = ({
                             className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-zinc-300 hover:text-red-500 hover:bg-red-50 rounded-lg flex items-center"
                             title="清除此拍"
                           >
-                            <span className="material-icons text-[14px]">remove_circle_outline</span>
+                            <span className="material-icons text-[16px]">remove_circle_outline</span>
                           </button>
                         )
                         :
@@ -260,8 +258,8 @@ const MeasureCard: React.FC<MeasureCardProps> = ({
                           className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-zinc-300 hover:text-blue-500 hover:bg-blue-50 rounded-lg flex items-center"
                         >
                           { beatChordName ?
-                            <span className="inline-flex items-center justify-center font-black text-[14px] w-[24px] h-[24px]">{beatChordName}</span> :
-                            <span className="material-icons text-[14px]">music_note</span>
+                            <span className="inline-flex items-center justify-center font-black text-[14px]">{beatChordName}</span> :
+                            <span className="material-icons text-[16px]">music_note</span>
                           }
                         </button>
                       }
@@ -272,7 +270,7 @@ const MeasureCard: React.FC<MeasureCardProps> = ({
                 {/* Chord-type beat: show chord diagram centered in column */}
                 {beatChordName && showChordPhoto && (
                   <div className="flex items-center justify-center" style={{transform: 'translateY(-12px)'}}>
-                    <GuitarChordPhoto chord={beatChordPhoto} size="sm" />
+                    <GuitarChordPhoto chord={beatChordPhoto} size="xs" />
                   </div>
                 )}
 
@@ -288,7 +286,7 @@ const MeasureCard: React.FC<MeasureCardProps> = ({
                         <button
                           disabled={!isEditMode}
                           onClick={() => handleGridClick(s, b)}
-                          className={`relative z-10 w-6 h-6 rounded-[1.25rem] flex items-center justify-center font-mono font-bold text-sm shadow-xl transition-all ${isNoteActive ? 'bg-indigo-600 text-white scale-110 ring-8 ring-indigo-100' : 'bg-zinc-900 text-white shadow-zinc-200'} ${isEditMode ? 'hover:scale-110 active:scale-95' : 'cursor-default'}`}
+                          className={`relative z-10 w-4 h-4 rounded-[1.25rem] flex items-center justify-center font-mono font-bold text-xs shadow-xl transition-all ${isNoteActive ? 'bg-indigo-600 text-white scale-110 ring-8 ring-indigo-100' : 'bg-zinc-900 text-white shadow-zinc-200'} ${isEditMode ? 'hover:scale-110 active:scale-95' : 'cursor-default'}`}
                         >
                           {fret}
                         </button>
@@ -316,7 +314,7 @@ const MeasureCard: React.FC<MeasureCardProps> = ({
                 {isEditMode && hasNotes && b < subdivisions - 1 && (
                   <button
                     onClick={() => handleCopyColumn(b)}
-                    className="absolute -bottom-9 left-1/2 -translate-x-1/2 p-1.5 text-zinc-300 hover:text-indigo-500 hover:bg-indigo-50 rounded-lg transition-all flex items-center opacity-0 group-hover:opacity-100"
+                    className="absolute -bottom-6 left-1/2 -translate-x-1/2 p-1.5 text-zinc-300 hover:text-indigo-500 hover:bg-indigo-50 rounded-lg transition-all flex items-center opacity-0 group-hover:opacity-100"
                     title="複製到下一拍"
                   >
                     <span className="material-icons text-[14px]">content_copy</span>
@@ -328,7 +326,7 @@ const MeasureCard: React.FC<MeasureCardProps> = ({
         </div>
 
         {/* Lyrics */}
-        <div className="mt-4 pt-4 border-t-2 border-zinc-50 flex flex-col gap-4">
+        <div className="mt-4 border-t-2 border-zinc-50 flex flex-col gap-4">
           <textarea
             disabled={!isEditMode}
             value={measure.lyrics || ''}

@@ -139,7 +139,7 @@ const ControlsBar: React.FC<ControlsBarProps> = ({
 
     <Field label="每列顯示小節數">
       <div className="flex items-center gap-2">
-        {[1, 2, 3, 4].map(num => (
+        {[1, 2, 3, 4, 6, 8].map(num => (
           <button
             key={num}
             onClick={() => onMeasuresPerRowChange(num)}

@@ -53,6 +53,29 @@ export const decodeBeatChord = (s: string): { name: string; idx: number } => {
 export const encodeBeatChord = (name: string, idx: number): string =>
   idx > 0 ? `${name}:${idx}` : name;
 
+// Shift fret positions by `semitones`. When a note would go below fret 0 on
+// its current string, it moves to a lower-pitched (higher-index) string at
+// the equivalent fret. If the note falls below low E open, it clamps to fret 0
+// of low E. On collision (multiple original notes mapping to the same string),
+// later iterations win.
+const transposeBeatFrets = (frets: BeatFrets, semitones: number): BeatFrets => {
+  const next: BeatFrets = [null, null, null, null, null, null];
+  for (let s = 0; s < 6; s++) {
+    const f = frets[s];
+    if (f === null || f === undefined) continue;
+    const targetMidi = STRING_BASE_MIDI[s] + f + semitones;
+    let newS = s;
+    let newF = targetMidi - STRING_BASE_MIDI[newS];
+    while (newF < 0 && newS < 5) {
+      newS++;
+      newF = targetMidi - STRING_BASE_MIDI[newS];
+    }
+    if (newF < 0) newF = 0;
+    next[newS] = newF;
+  }
+  return next;
+};
+
 export const transposeTabData = (data: TabData, semitones: number): TabData => ({
   ...data,
   key: transposeChordName(data.key, semitones),
@@ -71,9 +94,51 @@ export const transposeTabData = (data: TabData, semitones: number): TabData => (
           const { name, idx } = decodeBeatChord(beat);
           return encodeBeatChord(transposeChordName(name, semitones), idx);
         }
-        return (beat as BeatFrets).map(f => f !== null ? Math.max(0, f + semitones) : null);
+        return transposeBeatFrets(beat as BeatFrets, semitones);
       }) as Beat[],
     };
+  }),
+});
+
+// Group measures into visual rows. A row ends when it reaches `maxPerRow`
+// or when a measure carries `breakAfter: true` (forced line break).
+export const chunkMeasuresIntoRows = (
+  measures: TabData['measures'],
+  maxPerRow: number
+): TabData['measures'][] => {
+  const rows: TabData['measures'][] = [];
+  let row: TabData['measures'] = [];
+  for (const m of measures) {
+    row.push(m);
+    if (row.length >= maxPerRow || m.breakAfter) {
+      rows.push(row);
+      row = [];
+    }
+  }
+  if (row.length > 0) rows.push(row);
+  return rows;
+};
+
+// Switch every measure/beat chord to the target shape (Open / A / E barre).
+// If a chord has only one option or no matching shape, its existing position is kept.
+export const applyChordShapeToTabData = (data: TabData, shape: 'Open' | 'A' | 'E'): TabData => ({
+  ...data,
+  measures: data.measures.map(measure => {
+    const positions = CHORD_DATA[measure.chord];
+    let newIdx = measure.chordPositionIndex ?? 0;
+    if (positions && positions.length > 1) {
+      const found = positions.findIndex(p => p.baseShape === shape);
+      if (found !== -1) newIdx = found;
+    }
+    const newNotes = measure.notes.map(beat => {
+      if (typeof beat !== 'string') return beat;
+      const { name } = decodeBeatChord(beat);
+      const beatPositions = CHORD_DATA[name];
+      if (!beatPositions || beatPositions.length <= 1) return beat;
+      const foundBeat = beatPositions.findIndex(p => p.baseShape === shape);
+      return foundBeat !== -1 ? encodeBeatChord(name, foundBeat) : beat;
+    });
+    return { ...measure, chordPositionIndex: newIdx, notes: newNotes };
   }),
 });
 
