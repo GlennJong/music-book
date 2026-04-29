@@ -1,6 +1,6 @@
 import { lazy, Suspense, useState } from 'react';
 import { ReactHooks } from '@glennjong/vibe-sheets';
-import { CHORD_DATA, saveChordData, resetChordData } from '../../../components/GuitarChord/constants';
+import { CHORD_DATA, saveChordData, resetChordData, type ChordPosition } from '../../../components/GuitarChord/constants';
 
 const SheetSelector = lazy(() => import('./SheetSelector'));
 
@@ -29,7 +29,7 @@ const ChordDataEditor = () => {
         return;
       }
     }
-    saveChordData(parsed as Record<string, unknown[]>);
+    saveChordData(parsed as Record<string, ChordPosition[]>);
     window.location.reload();
   };
 
