@@ -102,12 +102,12 @@ export const DEFAULT_CHORD_DATA: ChordDatabase = {
 
   // --- F 系列 ---
   "F": [
-    { name: "F", chord: [1, 1, 2, 3, null, null], baseShape: "Open" },
+    { name: "F", chord: [null, null, 3, 2, 1, 1], baseShape: "Open" },
     { name: "F (E 型)", chord: [1, 3, 3, 2, 1, 1], startFret: 1, barre: { fret: 1, from: 1, to: 6 }, baseShape: "E" },
     { name: "F (A 型)", chord: [null, 8, 10, 10, 10, 8], startFret: 8, barre: { fret: 8, from: 2, to: 6 }, baseShape: "A" }
   ],
   "Fm": [
-    { name: "Fm", chord: [1, 1, 1, 3, null, null], baseShape: "Open" },
+    { name: "Fm", chord: [null, null, 3, 1, 1, 1], baseShape: "Open" },
     { name: "Fm (E 型)", chord: [1, 3, 3, 1, 1, 1], startFret: 1, barre: { fret: 1, from: 1, to: 6 }, baseShape: "E" }
   ],
   "Fdim": [{ name: "Fdim (E 型)", chord: [1, 2, 3, 1, null, null], startFret: 1, baseShape: "E" }],
@@ -121,7 +121,7 @@ export const DEFAULT_CHORD_DATA: ChordDatabase = {
     { name: "Fsus2 (E 型)", chord: [1, 3, 3, 0, 1, 1], startFret: 1, baseShape: "E" }
   ],
   "Fsus4": [
-    { name: "Fsus4", chord: [1, 1, 3, 3, null, null], baseShape: "Open" },
+    { name: "Fsus4", chord: [null, null, 3, 3, 1, 1], baseShape: "Open" },
     { name: "Fsus4 (E 型)", chord: [1, 3, 3, 3, 1, 1], startFret: 1, barre: { fret: 1, from: 1, to: 6 }, baseShape: "E" }
   ],
 
