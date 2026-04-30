@@ -29,7 +29,7 @@ const ChordDataEditor = () => {
         return;
       }
     }
-    saveChordData(parsed as Record<string, ChordPosition[]>);
+    saveChordData(parsed as unknown as Record<string, ChordPosition[]>);
     window.location.reload();
   };
 
