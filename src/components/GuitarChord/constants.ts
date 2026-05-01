@@ -60,7 +60,10 @@ export const DEFAULT_CHORD_DATA: ChordDatabase = {
     { name: "D (E 型)", chord: [10, 12, 12, 11, 10, 10], startFret: 10, barre: { fret: 10, from: 1, to: 6 }, baseShape: "E" }
   ],
   "Dm": [{ name: "Dm (Open)", chord: [null, null, 0, 2, 3, 1], baseShape: "Open" }, { name: "Dm (A 型)", chord: [null, 5, 7, 7, 6, 5], startFret: 5, barre: { fret: 5, from: 2, to: 6 }, baseShape: "A" }],
-  "Ddim": [{ name: "Ddim (Movable)", chord: [null, 5, 6, null, 6, null], startFret: 5, baseShape: "A" }],
+  "Ddim": [
+    { name: "Ddim (Open)", chord: [null, null, 0, 1, 3, 1], baseShape: "Open" },
+    { name: "Ddim (Movable)", chord: [null, 5, 6, null, 6, null], startFret: 5, baseShape: "A" }
+  ],
   "Daug": [{ name: "Daug (Open)", chord: [null, null, 0, 3, 3, 2], baseShape: "Open" }],
   "Dmaj7": [{ name: "Dmaj7 (Open)", chord: [null, null, 0, 2, 2, 2], baseShape: "Open" }, { name: "Dmaj7 (A 型)", chord: [null, 5, 7, 6, 7, 5], startFret: 5, barre: { fret: 5, from: 2, to: 6 }, baseShape: "A" }],
   "Dm7": [{ name: "Dm7 (Open)", chord: [null, null, 0, 2, 1, 1], baseShape: "Open" }],
@@ -68,6 +71,7 @@ export const DEFAULT_CHORD_DATA: ChordDatabase = {
   "Dm7b5": [{ name: "Dm7b5 (A 型)", chord: [null, 5, 6, 5, 6, null], startFret: 5, baseShape: "A" }],
   "Dsus2": [{ name: "Dsus2 (Open)", chord: [null, null, 0, 2, 3, 0], baseShape: "Open" }],
   "Dsus4": [{ name: "Dsus4 (Open)", chord: [null, null, 0, 2, 3, 3], baseShape: "Open" }],
+  "Dsus6": [{ name: "Dsus6 (Open)", chord: [null, null, 0, 0, 0, 3], baseShape: "Open" }],
 
   // --- Eb 系列 ---
   "Eb": [
@@ -102,13 +106,13 @@ export const DEFAULT_CHORD_DATA: ChordDatabase = {
 
   // --- F 系列 ---
   "F": [
-    { name: "F", chord: [null, null, 3, 2, 1, 1], baseShape: "Open" },
     { name: "F (E 型)", chord: [1, 3, 3, 2, 1, 1], startFret: 1, barre: { fret: 1, from: 1, to: 6 }, baseShape: "E" },
+    { name: "F", chord: [null, null, 3, 2, 1, 1], baseShape: "Open" },
     { name: "F (A 型)", chord: [null, 8, 10, 10, 10, 8], startFret: 8, barre: { fret: 8, from: 2, to: 6 }, baseShape: "A" }
   ],
   "Fm": [
+    { name: "Fm (E 型)", chord: [1, 3, 3, 1, 1, 1], startFret: 1, barre: { fret: 1, from: 1, to: 6 }, baseShape: "E" },
     { name: "Fm", chord: [null, null, 3, 1, 1, 1], baseShape: "Open" },
-    { name: "Fm (E 型)", chord: [1, 3, 3, 1, 1, 1], startFret: 1, barre: { fret: 1, from: 1, to: 6 }, baseShape: "E" }
   ],
   "Fdim": [{ name: "Fdim (E 型)", chord: [1, 2, 3, 1, null, null], startFret: 1, baseShape: "E" }],
   "Faug": [{ name: "Faug (Movable)", chord: [null, null, 3, 2, 2, 1], startFret: 1, baseShape: "Other" }],
