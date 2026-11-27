@@ -12,7 +12,7 @@ interface PlayProps {
 }
 
 type ChordShape = 'Open' | 'A' | 'E' | null;
-type EyeSettings = { top: number; bottom: number; speed: number; frequency: number };
+type EyeSettings = { trigger: number; anchor: number; dwell: number };
 type StoredSettings = {
   measuresPerRow: number;
   transposeOffset: number;
@@ -28,7 +28,16 @@ const DEFAULT_SETTINGS: StoredSettings = {
   showChordPhoto: true,
   lyricsOnly: false,
   chordShape: null,
-  eyeSettings: { top: 0.2, bottom: 0.45, speed: 8, frequency: 20 },
+  eyeSettings: { trigger: 0.65, anchor: 0.2, dwell: 700 },
+};
+
+// 只取認得的欄位（舊版的 top/bottom/speed/frequency 直接捨棄）
+const sanitizeEyeSettings = (raw: unknown): EyeSettings => {
+  const d = DEFAULT_SETTINGS.eyeSettings;
+  if (!raw || typeof raw !== 'object') return d;
+  const r = raw as Record<string, unknown>;
+  const num = (v: unknown, fallback: number) => (typeof v === 'number' && Number.isFinite(v) ? v : fallback);
+  return { trigger: num(r.trigger, d.trigger), anchor: num(r.anchor, d.anchor), dwell: num(r.dwell, d.dwell) };
 };
 
 const loadPlaySettings = (id: string | undefined): StoredSettings => {
@@ -45,9 +54,7 @@ const loadPlaySettings = (id: string | undefined): StoredSettings => {
       chordShape: p.chordShape === null || p.chordShape === 'Open' || p.chordShape === 'A' || p.chordShape === 'E'
         ? p.chordShape
         : DEFAULT_SETTINGS.chordShape,
-      eyeSettings: p.eyeSettings && typeof p.eyeSettings === 'object'
-        ? { ...DEFAULT_SETTINGS.eyeSettings, ...p.eyeSettings }
-        : DEFAULT_SETTINGS.eyeSettings,
+      eyeSettings: sanitizeEyeSettings(p.eyeSettings),
     };
   } catch {
     return DEFAULT_SETTINGS;
@@ -232,8 +239,7 @@ const Play: React.FC<PlayProps> = ({ tabData }) => {
   useEffect(() => {
     eyeRef.current = new EyeScroller('main-scroll-container', {
       ...eyeSettings,
-      left: 0.05,
-      right: 0.05,
+      rowSelector: '[data-eye-row]',
     });
     return () => { eyeRef.current?.disable(); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -342,7 +348,7 @@ const Play: React.FC<PlayProps> = ({ tabData }) => {
           </button>
           <button
             onClick={() => eyeRef.current?.refresh()}
-            title="清除校準數據"
+            title="清除校準數據（重新校準時也會自動清除）"
             className="p-2 rounded-xl bg-muted text-text-secondary hover:bg-hover transition-colors flex items-center"
           >
             <span className="material-icons text-[18px]">refresh</span>
@@ -356,10 +362,9 @@ const Play: React.FC<PlayProps> = ({ tabData }) => {
     <div className="px-6 py-4 bg-card border-b border-border flex flex-wrap gap-6">
       {(
         [
-          { key: 'top',       label: '上觸發區',  min: 0.05, max: 0.5,  step: 0.05, fmt: (v: number) => `${Math.round(v * 100)}%` },
-          { key: 'bottom',    label: '下觸發區',  min: 0.05, max: 0.5,  step: 0.05, fmt: (v: number) => `${Math.round(v * 100)}%` },
-          { key: 'speed',     label: '移動速度',  min: 1,    max: 30,   step: 1,    fmt: (v: number) => `${v} px` },
-          { key: 'frequency', label: '更新頻率',  min: 5,    max: 60,   step: 1,    fmt: (v: number) => `${v} Hz` },
+          { key: 'trigger', label: '觸發線（看到此線以下）', min: 0.5, max: 0.9, step: 0.05, fmt: (v: number) => `${Math.round(v * 100)}%` },
+          { key: 'anchor',  label: '翻頁後對齊位置',         min: 0.1, max: 0.4, step: 0.05, fmt: (v: number) => `${Math.round(v * 100)}%` },
+          { key: 'dwell',   label: '停留時間',               min: 300, max: 2000, step: 100, fmt: (v: number) => `${(v / 1000).toFixed(1)} 秒` },
         ] as const
       ).map(({ key, label, min, max, step, fmt }) => (
         <label key={key} className="flex flex-col gap-1.5 min-w-[140px]">
@@ -373,7 +378,7 @@ const Play: React.FC<PlayProps> = ({ tabData }) => {
             max={max}
             step={step}
             value={eyeSettings[key]}
-            onChange={e => setEyeSettings(prev => ({ ...prev, [key]: key === 'top' || key === 'bottom' ? parseFloat(e.target.value) : parseInt(e.target.value) }))}
+            onChange={e => setEyeSettings(prev => ({ ...prev, [key]: parseFloat(e.target.value) }))}
             className="w-full accent-primary"
           />
         </label>
@@ -527,7 +532,7 @@ const Play: React.FC<PlayProps> = ({ tabData }) => {
           <div className="text-center text-muted-foreground font-bold py-16">尚無小節</div>
         ) : (
           groups.map((group, gi) => (
-            <div key={gi} className="flex gap-4">
+            <div key={gi} data-eye-row className="flex gap-4">
               {group.map(measure => (
                 <MeasureView key={measure.id} measure={measure} subdivisions={subdivisions} showChordPhoto={showChordPhoto} lyricsOnly={lyricsOnly} />
               ))}
