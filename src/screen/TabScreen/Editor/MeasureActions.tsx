@@ -28,7 +28,7 @@ const MeasureActions: React.FC<MeasureActionsProps> = ({
   <div className="absolute top-12 right-2 z-20 flex gap-1">
     <button
       onClick={onMovePrev}
-      className="p-1 w-[24px] h-[24px] rounded-full bg-zinc-50 hover:bg-indigo-100 text-indigo-400 hover:text-indigo-700 shadow transition-all disabled:opacity-30"
+      className="p-1 w-[24px] h-[24px] rounded-full bg-background hover:bg-primary-subtle text-primary/70 hover:text-primary shadow transition-all disabled:opacity-30"
       title="前移小節"
       disabled={!canMovePrev}
     >
@@ -36,7 +36,7 @@ const MeasureActions: React.FC<MeasureActionsProps> = ({
     </button>
     <button
       onClick={onMoveNext}
-      className="p-1 w-[24px] h-[24px] rounded-full bg-zinc-50 hover:bg-indigo-100 text-indigo-400 hover:text-indigo-700 shadow transition-all disabled:opacity-30"
+      className="p-1 w-[24px] h-[24px] rounded-full bg-background hover:bg-primary-subtle text-primary/70 hover:text-primary shadow transition-all disabled:opacity-30"
       title="後移小節"
       disabled={!canMoveNext}
     >
@@ -44,35 +44,35 @@ const MeasureActions: React.FC<MeasureActionsProps> = ({
     </button>
     <button
       onClick={onToggleBreak}
-      className={`p-1 w-[24px] h-[24px] rounded-full shadow transition-all ${breakAfter ? 'bg-indigo-500 text-white hover:bg-indigo-600' : 'bg-zinc-50 hover:bg-indigo-100 text-indigo-400 hover:text-indigo-700'}`}
+      className={`p-1 w-[24px] h-[24px] rounded-full shadow transition-all ${breakAfter ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'bg-background hover:bg-primary-subtle text-primary/70 hover:text-primary'}`}
       title={breakAfter ? '取消換行' : '在此小節後換行'}
     >
       <span className="material-icons text-[16px]">keyboard_return</span>
     </button>
     <button
       onClick={onTextTab}
-      className="p-1 w-[24px] h-[24px] rounded-full bg-emerald-50 hover:bg-emerald-200 text-emerald-500 shadow transition-all"
+      className="p-1 w-[24px] h-[24px] rounded-full bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-500 shadow transition-all"
       title="文字譜"
     >
       <span className="material-icons text-[16px]">edit_note</span>
     </button>
     <button
       onClick={onCopyNext}
-      className="p-1 w-[24px] h-[24px] rounded-full bg-blue-50 hover:bg-blue-200 text-blue-500 shadow transition-all"
+      className="p-1 w-[24px] h-[24px] rounded-full bg-blue-500/10 hover:bg-blue-500/25 text-blue-500 shadow transition-all"
       title="複製小節"
     >
       <span className="material-icons text-[16px]">content_copy</span>
     </button>
     <button
       onClick={onCopyLast}
-      className="p-1 w-[24px] h-[24px] rounded-full bg-blue-200 hover:bg-blue-600 text-blue-900 shadow transition-all"
+      className="p-1 w-[24px] h-[24px] rounded-full bg-blue-500/25 hover:bg-blue-600 text-blue-600 dark:text-blue-400 hover:text-white shadow transition-all"
       title="複製到最後"
     >
       <span className="material-icons text-[16px]">content_copy</span>
     </button>
     <button
       onClick={onDelete}
-      className="p-1 w-[24px] h-[24px] rounded-full bg-red-50 hover:bg-red-200 text-red-500 shadow transition-all"
+      className="p-1 w-[24px] h-[24px] rounded-full bg-red-500/10 hover:bg-red-500/25 text-red-500 shadow transition-all"
       title="刪除小節"
     >
       <span className="material-icons text-[16px]">delete</span>

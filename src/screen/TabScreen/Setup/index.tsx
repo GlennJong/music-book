@@ -73,7 +73,7 @@ const ChordDataEditor = () => {
             }}
           />
           {error && (
-            <div style={{ marginTop: '8px', padding: '8px 12px', backgroundColor: '#fee', color: '#c00', borderRadius: '6px', fontSize: '0.85em' }}>
+            <div style={{ marginTop: '8px', padding: '8px 12px', backgroundColor: 'color-mix(in srgb, var(--danger) 12%, transparent)', color: 'var(--danger)', borderRadius: '6px', fontSize: '0.85em' }}>
               {error}
             </div>
           )}

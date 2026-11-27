@@ -103,21 +103,21 @@ const Converter: React.FC<ConverterProps> = ({ onChange }) => {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-50 text-zinc-900 font-sans p-6 md:p-12 selection:bg-indigo-100">
+    <div className="min-h-screen bg-background text-foreground font-sans p-6 md:p-12 selection:bg-primary-subtle">
       <div className="max-w-4xl mx-auto">
         <header className="flex items-center justify-between mb-12">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-indigo-100">
+            <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center text-primary-foreground shadow-xl shadow-primary/20">
               <span className="material-icons text-[28px]">photo_camera</span>
             </div>
             <div>
               <h1 className="text-2xl font-black uppercase tracking-tight">影像辨識轉換器</h1>
-              <p className="text-zinc-400 text-[10px] font-bold uppercase tracking-[0.2em]">Image to Vibe-TabData OCR</p>
+              <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-[0.2em]">Image to Vibe-TabData OCR</p>
             </div>
           </div>
           <button 
             onClick={() => window.location.reload()} 
-            className="p-2 text-zinc-300 hover:text-zinc-600 transition-colors flex items-center"
+            className="p-2 text-muted-foreground hover:text-text-secondary transition-colors flex items-center"
           >
             <span className="material-icons">refresh</span>
           </button>
@@ -126,13 +126,13 @@ const Converter: React.FC<ConverterProps> = ({ onChange }) => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
           {/* 左側：上傳區 */}
           <div className="space-y-6">
-            <div className={`relative border-2 border-dashed rounded-[3rem] transition-all flex flex-col items-center justify-center p-10 min-h-110 ${image ? 'border-indigo-200 bg-white shadow-inner' : 'border-zinc-200 hover:border-indigo-400 bg-zinc-100/30'}`}>
+            <div className={`relative border-2 border-dashed rounded-[3rem] transition-all flex flex-col items-center justify-center p-10 min-h-110 ${image ? 'border-primary/30 bg-card shadow-inner' : 'border-border hover:border-primary bg-muted/30'}`}>
               {!image ? (
                 <>
-                  <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mb-6 text-zinc-300">
+                  <div className="w-16 h-16 bg-card rounded-2xl shadow-sm flex items-center justify-center mb-6 text-muted-foreground">
                     <span className="material-icons text-[32px]">add_a_photo</span>
                   </div>
-                  <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest text-center">拖放或點擊上傳圖檔<br /><span className="text-[10px] opacity-60">(支援 PNG, JPG, JPEG)</span></p>
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest text-center">拖放或點擊上傳圖檔<br /><span className="text-[10px] opacity-60">(支援 PNG, JPG, JPEG)</span></p>
                   <input 
                     type="file" 
                     accept="image/png, image/jpeg, image/jpg" 
@@ -142,12 +142,12 @@ const Converter: React.FC<ConverterProps> = ({ onChange }) => {
                 </>
               ) : (
                 <div className="relative w-full h-full flex flex-col items-center">
-                  <div className="p-2 bg-zinc-50 rounded-3xl border border-zinc-100 shadow-sm mb-8">
+                  <div className="p-2 bg-background rounded-3xl border border-border shadow-sm mb-8">
                     <img src={image} alt="Preview" className="max-h-75 rounded-2xl object-contain" />
                   </div>
                   <button 
                     onClick={() => {setImage(null); setBase64Data(null); setResult(null);}} 
-                    className="w-12 h-12 bg-zinc-900 text-white rounded-2xl flex items-center justify-center shadow-xl hover:bg-red-500 transition-all active:scale-90"
+                    className="w-12 h-12 bg-foreground text-background rounded-2xl flex items-center justify-center shadow-xl hover:bg-red-500 hover:text-white transition-all active:scale-90"
                   >
                     <span className="material-icons text-[20px]">delete_sweep</span>
                   </button>
@@ -158,7 +158,7 @@ const Converter: React.FC<ConverterProps> = ({ onChange }) => {
             {image && !isProcessing && !result && (
               <button 
                 onClick={processImage}
-                className="w-full py-6 bg-zinc-950 text-white rounded-4xl font-black uppercase tracking-[0.3em] shadow-2xl shadow-zinc-200 hover:bg-indigo-600 hover:-translate-y-1.5 transition-all flex items-center justify-center gap-4"
+                className="w-full py-6 bg-foreground text-background rounded-4xl font-black uppercase tracking-[0.3em] shadow-2xl shadow-black/10 hover:bg-primary hover:text-primary-foreground hover:-translate-y-1.5 transition-all flex items-center justify-center gap-4"
               >
                 <span className="material-icons text-[20px]">auto_awesome</span>
                 Start AI Analysis
@@ -166,8 +166,8 @@ const Converter: React.FC<ConverterProps> = ({ onChange }) => {
             )}
 
             {isProcessing && (
-              <div className="w-full py-6 bg-white border-2 border-zinc-100 text-zinc-400 rounded-4xl font-black uppercase tracking-[0.3em] flex items-center justify-center gap-4 animate-pulse">
-                <div className="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+              <div className="w-full py-6 bg-card border-2 border-border text-muted-foreground rounded-4xl font-black uppercase tracking-[0.3em] flex items-center justify-center gap-4 animate-pulse">
+                <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
                 Analyzing Structure...
               </div>
             )}
@@ -211,7 +211,7 @@ const Converter: React.FC<ConverterProps> = ({ onChange }) => {
 
             {result && (
               <button 
-                className="w-full py-6 bg-white border-2 border-zinc-100 text-zinc-600 rounded-4xl font-black uppercase tracking-[0.2em] hover:bg-zinc-50 hover:text-indigo-600 transition-all flex items-center justify-center gap-4 shadow-sm active:scale-95"
+                className="w-full py-6 bg-card border-2 border-border text-text-secondary rounded-4xl font-black uppercase tracking-[0.2em] hover:bg-background hover:text-primary transition-all flex items-center justify-center gap-4 shadow-sm active:scale-95"
                 onClick={() => {
                   const blob = new Blob([JSON.stringify(result, null, 2)], { type: 'application/json' });
                   const url = URL.createObjectURL(blob);
@@ -228,8 +228,8 @@ const Converter: React.FC<ConverterProps> = ({ onChange }) => {
           </div>
         </div>
 
-        <footer className="mt-20 pt-10 border-t border-zinc-100 text-center">
-          <p className="text-[10px] font-black text-zinc-300 uppercase tracking-[0.5em]">
+        <footer className="mt-20 pt-10 border-t border-border text-center">
+          <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.5em]">
             Vibe Data Standard v1.2.4 • Gemini Flash OCR
           </p>
         </footer>

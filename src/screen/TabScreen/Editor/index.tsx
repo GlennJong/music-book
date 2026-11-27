@@ -262,18 +262,18 @@ const Editor: React.FC<EditorProps> = ({ tabData, updateData, createData }) => {
   const volumeIcon = volume <= -20 ? 'volume_off' : volume >= 0 ? 'volume_up' : 'volume_down';
 
   return (
-    <div className="min-h-screen bg-zinc-50 text-zinc-900 font-sans selection:bg-indigo-100">
-      <nav className="z-40 bg-white/80 backdrop-blur-md border-b border-zinc-200 px-6 py-4">
+    <div className="min-h-screen bg-background text-foreground font-sans selection:bg-primary-subtle">
+      <nav className="z-40 bg-card/80 backdrop-blur-md border-b border-border px-6 py-4">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-4">
-            <div className={`w-11 h-11 rounded-2xl flex items-center justify-center text-white shadow-xl transition-all ${isEditMode ? 'bg-amber-500 scale-105 shadow-amber-200' : 'bg-indigo-600'}`}>
+            <div className={`w-11 h-11 rounded-2xl flex items-center justify-center text-white shadow-xl transition-all ${isEditMode ? 'bg-amber-500 scale-105 shadow-amber-500/20' : 'bg-primary'}`}>
               <span className="material-icons text-[22px]">{isEditMode ? 'edit' : 'music_note'}</span>
             </div>
             <div>
               {isEditMode ? (
                 <input
                   ref={titleRef}
-                  className="text-xl font-black tracking-tight bg-transparent border-b-2 border-indigo-100 focus:border-indigo-400 outline-none w-full mb-1"
+                  className="text-xl font-black tracking-tight bg-transparent border-b-2 border-primary/30 focus:border-primary outline-none w-full mb-1"
                   defaultValue={currentData.title}
                   placeholder="請輸入標題"
                   aria-label="樂譜標題"
@@ -287,7 +287,7 @@ const Editor: React.FC<EditorProps> = ({ tabData, updateData, createData }) => {
               ) : (
                 <h3 className="text-xl font-black tracking-tight">{currentData.title}</h3>
               )}
-              <div className="flex gap-3 text-[10px] font-bold text-zinc-400 tracking-widest mt-0.5">
+              <div className="flex gap-3 text-[10px] font-bold text-muted-foreground tracking-widest mt-0.5">
                 {currentData.artist && <><span>{currentData.artist}</span><span>•</span></>}
                 {currentData.key && <span>{currentData.key}</span>}
                 {currentData.key && <span>•</span>}
@@ -297,12 +297,12 @@ const Editor: React.FC<EditorProps> = ({ tabData, updateData, createData }) => {
           </div>
           <div className="flex items-center gap-2">
             {isEditMode && (
-              <div className="flex gap-1 mr-4 border-r pr-4 border-zinc-200">
+              <div className="flex gap-1 mr-4 border-r pr-4 border-border">
                 <button
                   onClick={undo}
                   disabled={history.past.length === 0}
                   title="復原 (Ctrl+Z)"
-                  className="p-2 rounded-lg hover:bg-zinc-100 disabled:opacity-20 transition-opacity flex items-center"
+                  className="p-2 rounded-lg hover:bg-muted disabled:opacity-20 transition-opacity flex items-center"
                 >
                   <span className="material-icons text-[18px]">undo</span>
                 </button>
@@ -310,7 +310,7 @@ const Editor: React.FC<EditorProps> = ({ tabData, updateData, createData }) => {
                   onClick={redo}
                   disabled={history.future.length === 0}
                   title="重做 (Ctrl+Shift+Z)"
-                  className="p-2 rounded-lg hover:bg-zinc-100 disabled:opacity-20 transition-opacity flex items-center"
+                  className="p-2 rounded-lg hover:bg-muted disabled:opacity-20 transition-opacity flex items-center"
                 >
                   <span className="material-icons text-[18px]">redo</span>
                 </button>
@@ -319,7 +319,7 @@ const Editor: React.FC<EditorProps> = ({ tabData, updateData, createData }) => {
             <button
               onClick={() => setShowChordPhoto(v => !v)}
               title={showChordPhoto ? '隱藏和弦圖' : '顯示和弦圖'}
-              className={`p-2.5 rounded-xl transition-colors flex items-center ${showChordPhoto ? 'bg-indigo-100 text-indigo-600' : 'bg-zinc-100 text-zinc-400 hover:bg-zinc-200'}`}
+              className={`p-2.5 rounded-xl transition-colors flex items-center ${showChordPhoto ? 'bg-primary-subtle text-primary' : 'bg-muted text-muted-foreground hover:bg-hover'}`}
             >
               <span className="material-icons text-[20px]">piano</span>
             </button>
@@ -327,17 +327,17 @@ const Editor: React.FC<EditorProps> = ({ tabData, updateData, createData }) => {
               <button
                 onClick={() => setShowChordShapeMenu(v => !v)}
                 title="一鍵切換和弦型態"
-                className={`p-2.5 rounded-xl transition-colors flex items-center ${showChordShapeMenu ? 'bg-indigo-100 text-indigo-600' : 'bg-zinc-100 text-zinc-500 hover:bg-zinc-200'}`}
+                className={`p-2.5 rounded-xl transition-colors flex items-center ${showChordShapeMenu ? 'bg-primary-subtle text-primary' : 'bg-muted text-muted-foreground hover:bg-hover'}`}
               >
                 <span className="material-icons text-[20px]">tune</span>
               </button>
               {showChordShapeMenu && (
-                <div className="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-lg border border-zinc-200 py-1 z-50 min-w-30">
+                <div className="absolute right-0 top-full mt-1 bg-card rounded-xl shadow-lg border border-border py-1 z-50 min-w-30">
                   {(['Open', 'A', 'E'] as const).map(shape => (
                     <button
                       key={shape}
                       onClick={() => applyChordShape(shape)}
-                      className="w-full text-left px-4 py-2 text-sm hover:bg-zinc-50 transition-colors text-zinc-700"
+                      className="w-full text-left px-4 py-2 text-sm hover:bg-background transition-colors text-text-secondary"
                     >
                       {shape === 'Open' ? '開放和弦' : `封閉和弦 ${shape} 型`}
                     </button>
@@ -345,7 +345,7 @@ const Editor: React.FC<EditorProps> = ({ tabData, updateData, createData }) => {
                 </div>
               )}
             </div>
-            <button onClick={() => setViewMode(viewMode === 'render' ? 'data' : 'render')} className="p-2.5 rounded-xl bg-zinc-100 text-zinc-500 hover:bg-zinc-200 transition-colors flex items-center">
+            <button onClick={() => setViewMode(viewMode === 'render' ? 'data' : 'render')} className="p-2.5 rounded-xl bg-muted text-muted-foreground hover:bg-hover transition-colors flex items-center">
               <span className="material-icons text-[20px]">description</span>
             </button>
           </div>
@@ -376,7 +376,7 @@ const Editor: React.FC<EditorProps> = ({ tabData, updateData, createData }) => {
               {isEditMode && (
                 <button
                   onClick={addMeasureAtStart}
-                  className="w-full mb-4 py-4 border-4 border-dashed border-indigo-200 rounded-4xl flex flex-col items-center justify-center gap-2 text-indigo-400 hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50/50 transition-all group"
+                  className="w-full mb-4 py-4 border-4 border-dashed border-primary/30 rounded-4xl flex flex-col items-center justify-center gap-2 text-primary/70 hover:border-primary hover:text-primary hover:bg-primary-subtle/50 transition-all group"
                 >
                   <span className="material-icons text-[28px] group-hover:rotate-180 transition-transform duration-700">add</span>
                   <span className="font-black tracking-[0.2em] text-sm">新增小節（最前面）</span>
@@ -426,7 +426,7 @@ const Editor: React.FC<EditorProps> = ({ tabData, updateData, createData }) => {
               {isEditMode && (
                 <button
                   onClick={addMeasureAtEnd}
-                  className="w-full py-4 border-4 border-dashed border-indigo-200 rounded-4xl flex flex-col items-center justify-center gap-2 text-indigo-400 hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50/50 transition-all group"
+                  className="w-full py-4 border-4 border-dashed border-primary/30 rounded-4xl flex flex-col items-center justify-center gap-2 text-primary/70 hover:border-primary hover:text-primary hover:bg-primary-subtle/50 transition-all group"
                 >
                   <span className="material-icons text-[28px] group-hover:rotate-180 transition-transform duration-700">add</span>
                   <span className="font-black tracking-[0.2em] text-sm">新增小節（最後面）</span>
@@ -445,7 +445,7 @@ const Editor: React.FC<EditorProps> = ({ tabData, updateData, createData }) => {
       </main>
 
       <div className="fixed bottom-14 left-1/2 -translate-x-1/2 z-50 flex items-center gap-6">
-        <div className="bg-white/95 backdrop-blur-3xl px-12 py-7 rounded-4xl shadow-2xl border border-zinc-200/50 flex items-center gap-12 ring-1 ring-zinc-900/10">
+        <div className="bg-card/95 backdrop-blur-3xl px-12 py-7 rounded-4xl shadow-2xl border border-border/50 flex items-center gap-12 ring-1 ring-foreground/10">
           <button
             onClick={() => {
               if (isPlaying) playTab();
@@ -460,7 +460,7 @@ const Editor: React.FC<EditorProps> = ({ tabData, updateData, createData }) => {
               }
               setIsEditMode(prev => !prev);
             }}
-            className={`flex items-center gap-5 px-10 py-5 rounded-4xl font-black text-sm tracking-[0.2em] transition-all active:scale-95 ${isEditMode ? 'bg-amber-100 text-amber-800 ring-2 ring-amber-200 shadow-xl shadow-amber-100' : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200'}`}
+            className={`flex items-center gap-5 px-10 py-5 rounded-4xl font-black text-sm tracking-[0.2em] transition-all active:scale-95 ${isEditMode ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 ring-2 ring-amber-500/30 shadow-xl shadow-amber-500/20' : 'bg-muted text-text-secondary hover:bg-hover'}`}
           >
             <span className="material-icons text-[16px]">{isEditMode ? 'check' : 'layers'}</span>
             {isEditMode ? 'FINISH' : 'EDIT'}
@@ -471,10 +471,10 @@ const Editor: React.FC<EditorProps> = ({ tabData, updateData, createData }) => {
             disabled={isEditMode}
             className={`w-12 h-12 rounded-[2.5rem] flex items-center justify-center transition-all shadow-2xl ${
               isPlaying
-                ? 'bg-red-500 shadow-red-200 text-white animate-pulse'
+                ? 'bg-red-500 shadow-red-500/20 text-white animate-pulse'
                 : isEditMode
-                  ? 'bg-zinc-100 text-zinc-200 cursor-not-allowed shadow-none'
-                  : 'bg-zinc-950 text-white hover:bg-indigo-600 hover:-translate-y-2 shadow-indigo-100'
+                  ? 'bg-muted text-muted-foreground/50 cursor-not-allowed shadow-none'
+                  : 'bg-foreground text-background hover:bg-primary hover:text-primary-foreground hover:-translate-y-2 shadow-primary/20'
             }`}
           >
             <span className="material-icons text-[32px]">{isPlaying ? 'stop' : 'play_arrow'}</span>
@@ -483,7 +483,7 @@ const Editor: React.FC<EditorProps> = ({ tabData, updateData, createData }) => {
           <div className="flex items-center gap-2.5" title={`音量 ${volume} dB`}>
             <button
               onClick={() => setVolume(v => v <= -20 ? 6 : -20)}
-              className="text-zinc-400 hover:text-zinc-600 transition-colors flex items-center"
+              className="text-muted-foreground hover:text-text-secondary transition-colors flex items-center"
             >
               <span className="material-icons text-[18px]">{volumeIcon}</span>
             </button>
@@ -494,17 +494,17 @@ const Editor: React.FC<EditorProps> = ({ tabData, updateData, createData }) => {
               step={2}
               value={volume}
               onChange={e => setVolume(Number(e.target.value))}
-              className="w-20 cursor-pointer accent-indigo-600"
+              className="w-20 cursor-pointer accent-primary"
               aria-label="音量調節"
             />
           </div>
 
-          <div className="hidden xl:block border-l-2 border-zinc-100 pl-12 space-y-2 text-right">
+          <div className="hidden xl:block border-l-2 border-border pl-12 space-y-2 text-right">
             <div className="flex items-center justify-end gap-3 text-emerald-500">
               <span className="material-icons text-[14px]">check_circle</span>
               <span className="text-[10px] font-black uppercase tracking-[0.2em] leading-none">Ready to Sync</span>
             </div>
-            <p className="text-[10px] text-zinc-400 font-mono uppercase tracking-widest">History: {history.past.length} Steps</p>
+            <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-widest">History: {history.past.length} Steps</p>
           </div>
         </div>
       </div>

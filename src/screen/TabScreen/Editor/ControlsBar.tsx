@@ -19,12 +19,12 @@ interface ControlsBarProps {
 
 const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
   <div className="flex flex-col gap-3">
-    <label className="text-[10px] font-black uppercase text-zinc-400 tracking-widest px-1">{label}</label>
+    <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest px-1">{label}</label>
     {children}
   </div>
 );
 
-const Divider = () => <div className="h-10 w-px bg-zinc-100 hidden md:block" />;
+const Divider = () => <div className="h-10 w-px bg-muted hidden md:block" />;
 
 const ControlsBar: React.FC<ControlsBarProps> = ({
   isEditMode, subdivisions, onSubdivisionsChange,
@@ -32,17 +32,17 @@ const ControlsBar: React.FC<ControlsBarProps> = ({
   artist, onArtistChange, capo, onCapoChange,
   measuresPerRow, onMeasuresPerRowChange, onTranspose,
 }) => (
-  <div className="bg-white p-8 rounded-3xl border border-zinc-200/60 shadow-sm flex flex-wrap gap-10 items-center animate-in fade-in duration-500">
+  <div className="bg-card p-8 rounded-3xl border border-border/60 shadow-sm flex flex-wrap gap-10 items-center animate-in fade-in duration-500">
     <Field label="歌手 (Artist)">
       {isEditMode ? (
         <input
           value={artist}
           onChange={e => onArtistChange(e.target.value)}
           placeholder="歌手名稱"
-          className="px-4 py-2 rounded-xl bg-zinc-50 border border-zinc-200 font-bold text-sm outline-none focus:ring-2 focus:ring-indigo-400 w-40"
+          className="px-4 py-2 rounded-xl bg-background border border-border font-bold text-sm outline-none focus:ring-2 focus:ring-primary w-40"
         />
       ) : (
-        <span className="px-4 py-2 rounded-xl bg-zinc-50 border border-zinc-100 font-bold text-sm text-zinc-600">{artist || '—'}</span>
+        <span className="px-4 py-2 rounded-xl bg-background border border-border font-bold text-sm text-text-secondary">{artist || '—'}</span>
       )}
     </Field>
 
@@ -54,10 +54,10 @@ const ControlsBar: React.FC<ControlsBarProps> = ({
           value={keyLabel}
           onChange={e => onKeyChange(e.target.value)}
           placeholder="如 C, Am"
-          className="px-4 py-2 rounded-xl bg-indigo-50 border border-indigo-100 font-black text-sm text-indigo-600 outline-none focus:ring-2 focus:ring-indigo-400 w-24 uppercase"
+          className="px-4 py-2 rounded-xl bg-primary-subtle border border-primary/30 font-black text-sm text-primary outline-none focus:ring-2 focus:ring-primary w-24 uppercase"
         />
       ) : (
-        <span className="px-4 py-2 rounded-xl bg-indigo-50 border border-indigo-100 font-black text-indigo-600 text-sm uppercase">{keyLabel || '—'} 調</span>
+        <span className="px-4 py-2 rounded-xl bg-primary-subtle border border-primary/30 font-black text-primary text-sm uppercase">{keyLabel || '—'} 調</span>
       )}
     </Field>
 
@@ -72,10 +72,10 @@ const ControlsBar: React.FC<ControlsBarProps> = ({
           placeholder="120"
           min={20}
           max={300}
-          className="px-4 py-2 rounded-xl bg-zinc-50 border border-zinc-200 font-bold text-sm outline-none focus:ring-2 focus:ring-indigo-400 w-24"
+          className="px-4 py-2 rounded-xl bg-background border border-border font-bold text-sm outline-none focus:ring-2 focus:ring-primary w-24"
         />
       ) : (
-        <span className="px-4 py-2 rounded-xl bg-zinc-50 border border-zinc-100 font-bold text-sm text-zinc-600">{bpm || '—'} BPM</span>
+        <span className="px-4 py-2 rounded-xl bg-background border border-border font-bold text-sm text-text-secondary">{bpm || '—'} BPM</span>
       )}
     </Field>
 
@@ -88,12 +88,12 @@ const ControlsBar: React.FC<ControlsBarProps> = ({
             <button
               key={n}
               onClick={() => onCapoChange(n)}
-              className={`w-8 h-8 rounded-lg font-bold text-xs transition-all ${capo === n ? 'bg-zinc-900 text-white shadow' : 'bg-zinc-100 text-zinc-400 hover:bg-zinc-200'}`}
+              className={`w-8 h-8 rounded-lg font-bold text-xs transition-all ${capo === n ? 'bg-foreground text-background shadow' : 'bg-muted text-muted-foreground hover:bg-hover'}`}
             >{n}</button>
           ))}
         </div>
       ) : (
-        <span className="px-4 py-2 rounded-xl bg-zinc-50 border border-zinc-100 font-bold text-sm text-zinc-600">{capo > 0 ? `Capo ${capo}` : '無 Capo'}</span>
+        <span className="px-4 py-2 rounded-xl bg-background border border-border font-bold text-sm text-text-secondary">{capo > 0 ? `Capo ${capo}` : '無 Capo'}</span>
       )}
     </Field>
 
@@ -103,14 +103,14 @@ const ControlsBar: React.FC<ControlsBarProps> = ({
       <div className="flex items-center gap-2">
         <button
           onClick={() => onTranspose(-1)}
-          className="flex items-center gap-1 px-3 py-2 rounded-xl bg-zinc-100 text-zinc-600 hover:bg-zinc-200 font-bold text-sm transition-all"
+          className="flex items-center gap-1 px-3 py-2 rounded-xl bg-muted text-text-secondary hover:bg-hover font-bold text-sm transition-all"
         >
           <span className="material-icons text-[16px]">arrow_downward</span>
           ↓ 1
         </button>
         <button
           onClick={() => onTranspose(1)}
-          className="flex items-center gap-1 px-3 py-2 rounded-xl bg-zinc-100 text-zinc-600 hover:bg-zinc-200 font-bold text-sm transition-all"
+          className="flex items-center gap-1 px-3 py-2 rounded-xl bg-muted text-text-secondary hover:bg-hover font-bold text-sm transition-all"
         >
           <span className="material-icons text-[16px]">arrow_upward</span>
           ↑ 1
@@ -127,7 +127,7 @@ const ControlsBar: React.FC<ControlsBarProps> = ({
             key={num}
             onClick={() => isEditMode && onSubdivisionsChange(num)}
             disabled={!isEditMode}
-            className={`px-4 py-2 rounded-xl font-bold text-sm transition-all ${subdivisions === num ? 'bg-zinc-900 text-white shadow-lg' : 'bg-zinc-100 text-zinc-400'} ${!isEditMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-zinc-200'}`}
+            className={`px-4 py-2 rounded-xl font-bold text-sm transition-all ${subdivisions === num ? 'bg-foreground text-background shadow-lg' : 'bg-muted text-muted-foreground'} ${!isEditMode ? 'opacity-40 cursor-not-allowed' : 'hover:bg-hover'}`}
           >
             {num}
           </button>
@@ -143,7 +143,7 @@ const ControlsBar: React.FC<ControlsBarProps> = ({
           <button
             key={num}
             onClick={() => onMeasuresPerRowChange(num)}
-            className={`px-4 py-2 rounded-xl font-bold text-sm transition-all ${measuresPerRow === num ? 'bg-indigo-600 text-white shadow-lg' : 'bg-zinc-100 text-zinc-400 hover:bg-zinc-200'}`}
+            className={`px-4 py-2 rounded-xl font-bold text-sm transition-all ${measuresPerRow === num ? 'bg-primary text-primary-foreground shadow-lg' : 'bg-muted text-muted-foreground hover:bg-hover'}`}
           >
             {num}
           </button>

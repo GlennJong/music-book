@@ -18,7 +18,7 @@ const DataView: React.FC<DataViewProps> = ({ jsonEditValue, setJsonEditValue, cu
       spellCheck={false}
     />
     <button
-      className="p-2.5 rounded-xl bg-zinc-100 text-zinc-500 hover:bg-zinc-200 transition-colors flex items-center"
+      className="p-2.5 rounded-xl bg-muted text-muted-foreground hover:bg-hover transition-colors flex items-center"
       onClick={() => {
         try {
           const data = JSON.parse(jsonEditValue);
