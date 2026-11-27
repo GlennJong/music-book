@@ -12,7 +12,8 @@
   --color-primary: var(--primary);
   --color-primary-fg: var(--primary-fg);
   --color-primary-subtle: var(--primary-subtle);
-  
+  --color-hover: var(--bg-hover);
+
   --color-background: var(--bg-main);
   --color-foreground: var(--text-main);
   
@@ -42,7 +43,11 @@
   --bg-main: #f8f9fa;
   --bg-card: #ffffff;
   --bg-subtle: #e9ecef;
-  
+  --bg-hover: #dee2e6;
+  --input-bg: var(--bg-card);
+  --bg-item: var(--bg-subtle);
+  --shadow-color: rgb(0 0 0 / 0.1);
+
   --text-main: #212529;
   --text-secondary: #495057;
   --text-muted: #868e96;
@@ -52,7 +57,8 @@
   --primary: #1a76cd;
   --primary-fg: #ffffff;
   --primary-subtle: #e7f1ff;
-  
+  --primary-bg-subtle: var(--primary-subtle);
+
   --danger: #dc3545;
   --success: #198754;
   --warning: #ffc107;
@@ -77,16 +83,18 @@
     --bg-main: #09090b;
     --bg-card: #18181b;
     --bg-subtle: #27272a;
-    
+    --bg-hover: #3f3f46;
+    --shadow-color: rgb(0 0 0 / 0.5);
+
     --text-main: #fafafa;
     --text-secondary: #a1a1aa;
-    --text-muted: #52525b;
-    
-    --border-color: #27272a;
-    
+    --text-muted: #71717a; /* #52525b was too dim on dark cards */
+
+    --border-color: #3f3f46;
+
     --primary: #3b82f6; /* Brighter blue for dark mode */
     --primary-fg: #ffffff;
-    --primary-subtle: #1e3a8a;
+    --primary-subtle: #172554;
     
     --danger: #ef4444;
     --success: #22c55e;
@@ -129,6 +137,18 @@ input {
   color: var(--text-main);
   border: 1px solid var(--border-color);
   border-radius: 4px;
+}
+
+/* Play 全螢幕模式：隱藏 App 外框（導覽列、header），只留譜面 */
+.play-fullscreen [data-app-chrome] {
+  display: none !important;
+}
+.play-fullscreen #main-scroll-container {
+  padding-bottom: 0 !important;
+}
+.play-fullscreen [data-tab-main] {
+  padding-left: 0;
+  padding-right: 0;
 }
 
 @keyframes spin {

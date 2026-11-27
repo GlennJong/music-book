@@ -36,17 +36,17 @@ const TabScreen: React.FC = () => {
   return (
     <div>
       {/* Header 區塊 */}
-      <header className="bg-white/80 backdrop-blur-md border-b border-zinc-100 px-6 py-4 mb-8 sticky top-0 z-40">
+      <header data-app-chrome className="bg-card/80 backdrop-blur-md border-b border-border px-6 py-4 mb-8 sticky top-0 z-40">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
           <div>
             <h1 className="text-2xl md:text-3xl font-black tracking-tight mb-1">{headerTitle}</h1>
-            <div className="text-zinc-400 text-xs md:text-sm font-bold tracking-widest">{headerDesc}</div>
+            <div className="text-muted-foreground text-xs md:text-sm font-bold tracking-widest">{headerDesc}</div>
             
           </div>
           <div className="flex gap-2 mt-2 md:mt-0">
             { mode === 'management' && (
               <button
-                className={`px-4 py-2 rounded-xl font-bold transition-colors ${mode==='management' ? 'bg-indigo-600 text-white shadow' : 'bg-zinc-100 text-zinc-500 hover:bg-indigo-50'}`}
+                className={`px-4 py-2 rounded-xl font-bold transition-colors ${mode==='management' ? 'bg-primary text-primary-foreground shadow' : 'bg-muted text-text-secondary hover:bg-primary-subtle'}`}
                 onClick={() => {
                   setSelectedTabIndex(undefined);
                   setMode('editor');
@@ -54,16 +54,16 @@ const TabScreen: React.FC = () => {
               >新增</button>
             ) }
             <button
-              className={`px-4 py-2 rounded-xl font-bold transition-colors ${mode==='management' ? 'bg-indigo-600 text-white shadow' : 'bg-zinc-100 text-zinc-500 hover:bg-indigo-50'}`}
+              className={`px-4 py-2 rounded-xl font-bold transition-colors ${mode==='management' ? 'bg-primary text-primary-foreground shadow' : 'bg-muted text-text-secondary hover:bg-primary-subtle'}`}
               onClick={() => {
                 setSelectedTabIndex(undefined);
                 setMode('management');
               }}
               >管理樂譜</button>
-            <button onClick={() => setMode('converter')} className={`px-4 py-2 rounded-xl font-bold transition-colors ${mode==='converter' ? 'bg-indigo-600 text-white shadow' : 'bg-zinc-100 text-zinc-500 hover:bg-indigo-50'}`}>轉換器</button>
+            <button onClick={() => setMode('converter')} className={`px-4 py-2 rounded-xl font-bold transition-colors ${mode==='converter' ? 'bg-primary text-primary-foreground shadow' : 'bg-muted text-text-secondary hover:bg-primary-subtle'}`}>轉換器</button>
             <button
               onClick={() => setMode('setup')}
-              className={`px-4 py-2 rounded-xl font-bold transition-colors ${mode==='setup' ? 'bg-indigo-600 text-white shadow' : 'bg-zinc-100 text-zinc-500 hover:bg-indigo-50'}`}
+              className={`px-4 py-2 rounded-xl font-bold transition-colors ${mode==='setup' ? 'bg-primary text-primary-foreground shadow' : 'bg-muted text-text-secondary hover:bg-primary-subtle'}`}
             >
               設定
             </button>
@@ -71,7 +71,7 @@ const TabScreen: React.FC = () => {
         </div>
       </header>
 
-      <main className="pl-8 pr-8">
+      <main data-tab-main className="pl-8 pr-8">
         {mode === 'management' && (
           <Management
             tabList={tabList}

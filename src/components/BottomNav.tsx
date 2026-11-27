@@ -7,7 +7,7 @@ type BottomNavProps = {
 
 const BottomNav = ({ currentTab, onTabChange }: BottomNavProps) => {
   return (
-    <div style={{
+    <div data-app-chrome style={{
       position: 'fixed',
       bottom: 0,
       left: 0,
