@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { type DriveFile } from '@glennjong/vibe-sheets';
+import { type DriveFile, getAuthorizeUrl } from '@glennjong/vibe-sheets';
 import type { RawData } from '../types';
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -17,7 +17,17 @@ export const fetchScript = async (url: string, method: 'GET' | 'POST' = 'GET', b
   }));
 };
 
-const FileItem = ({ isNew, file, onSelect }: { isNew: boolean, file: DriveFile, onSelect: (scriptUrl: string) => void }) => {
+type FileItemProps = {
+  isNew: boolean;
+  file: DriveFile;
+  onSelect: (scriptUrl: string) => void;
+  needsUpgrade?: boolean;
+  onUpgrade?: () => Promise<void>;
+};
+
+const FileItem = ({ isNew, file, onSelect, needsUpgrade, onUpgrade }: FileItemProps) => {
+  const [ isUpgrading, setIsUpgrading ] = useState(false);
+  const [ upgradeError, setUpgradeError ] = useState<string | null>(null);
   const [ isFetching, setIsFetching ] = useState(false);
   const [ isAccessed, setIsAccessed ] = useState<boolean | undefined>(!isNew);
 
@@ -124,13 +134,49 @@ const FileItem = ({ isNew, file, onSelect }: { isNew: boolean, file: DriveFile, 
             )}
           </button>
         </div>
+        { needsUpgrade && onUpgrade && (
+          <div style={{ marginTop: '12px', padding: '10px', backgroundColor: 'var(--bg-item)', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+            <p style={{ margin: '0 0 8px 0', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+              後端腳本有新版本（同步更穩定、避免重複新增）。升級後網址不變。
+            </p>
+            <button
+              disabled={isUpgrading}
+              onClick={async () => {
+                setIsUpgrading(true);
+                setUpgradeError(null);
+                try {
+                  await onUpgrade();
+                } catch (e) {
+                  setUpgradeError(e instanceof Error ? e.message : String(e));
+                } finally {
+                  setIsUpgrading(false);
+                }
+              }}
+              style={{
+                width: '100%',
+                backgroundColor: isUpgrading ? 'var(--input-bg)' : 'var(--primary)',
+                color: isUpgrading ? 'var(--text-muted)' : 'var(--primary-fg)',
+                border: 'none',
+                padding: '8px',
+                borderRadius: '4px',
+                cursor: isUpgrading ? 'wait' : 'pointer',
+                fontWeight: '500'
+              }}
+            >
+              {isUpgrading ? '升級中…' : '升級後端'}
+            </button>
+            {upgradeError && (
+              <p style={{ margin: '8px 0 0 0', color: 'var(--danger)', fontSize: '0.85rem' }}>{upgradeError}</p>
+            )}
+          </div>
+        )}
         { isAccessed === false && 
           <div style={{ marginTop: '12px', padding: '10px', backgroundColor: 'var(--warning-bg-subtle)', borderRadius: '6px', border: '1px solid var(--warning)' }}>
             <p style={{ margin: '0 0 8px 0', color: 'var(--text-main)', fontSize: '0.9rem' }}>Access authorization required.</p>
             <button 
               onClick={() => {
-                const scriptUrl = file.scriptUrl;
-                window.open(scriptUrl, 'auth', 'width=600,height=400');
+                if (!file.scriptUrl) return;
+                window.open(getAuthorizeUrl(file.scriptUrl), 'auth', 'width=600,height=400');
                 pollAccess();
               }}
               style={{

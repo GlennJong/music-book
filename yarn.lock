@@ -1032,10 +1032,10 @@
     "@eslint/core" "^0.17.0"
     levn "^0.4.1"
 
-"@glennjong/vibe-sheets@^0.3.6":
-  version "0.3.6"
-  resolved "https://registry.npmjs.org/@glennjong/vibe-sheets/-/vibe-sheets-0.3.6.tgz"
-  integrity sha512-QqK0OOSb+mCRQ203vnrr07HyfKmad/Lsguk+fTvu0grYvrjcOXAeqYZJmVovBAMxKqbcfCBXOTFTWQw4HhwhNw==
+"@glennjong/vibe-sheets@^0.4.1":
+  version "0.4.1"
+  resolved "https://registry.yarnpkg.com/@glennjong/vibe-sheets/-/vibe-sheets-0.4.1.tgz#7ced0cff79c39fbb0584c750687abc9fc4ac429f"
+  integrity sha512-Ylw1A9iMNvQ9nC8c64IP1CIE6HIIl6L+eq99i/dTwjS1U0YiyLy5g4A/R0uHxc8kw80se+VvuRuL+Km+ZcCtAg==
 
 "@humanfs/core@^0.19.1":
   version "0.19.1"

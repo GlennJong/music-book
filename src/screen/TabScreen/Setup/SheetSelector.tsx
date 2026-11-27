@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { ReactHooks } from '@glennjong/vibe-sheets';
+import { ReactHooks, type ColumnDefinition, type DriveFile } from '@glennjong/vibe-sheets';
 import FileItem from '../../../components/FileItem';
+import { BACKEND_SCRIPT, needsScriptUpgrade } from '../../../utils/backendScript';
 
 type CreateSheetBoxProps = {
-  createSheet: (options: { sheetName: string, prefix?: string, columns?: { name: string, type: 'string' | 'number' | 'boolean' }[], tabName?: string }) => Promise<void>;
+  createSheet: ReturnType<typeof ReactHooks.useSheetManager>['createSheet'];
   fetchFiles: (prefix: string) => Promise<void>;
   onCreate: (newSheetNames: string) => void;
 }
@@ -28,7 +29,8 @@ const CreateSheetBox = ({ createSheet, fetchFiles, onCreate }: CreateSheetBoxPro
           { name: 'capo', type: 'number' },
           { name: 'tuningName', type: 'string' },
           { name: 'measures', type: 'string' }, // measures 存為 JSON 字串
-        ]
+        ] satisfies ColumnDefinition[],
+        script: BACKEND_SCRIPT,
       })
       await fetchFiles('musicbook-');
       onCreate(sheetName);
@@ -101,9 +103,21 @@ const SheetSelector = ({ token, onSelect }: { token: string, onSelect: (endpoint
   const { 
     createSheet, 
     fetchFiles,
+    upgradeScript,
     loading,
     files,
   } = ReactHooks.useSheetManager(token);
+
+  // 升級既有試算表的後端腳本（沿用原本的部署，網址通常不變）
+  const handleUpgrade = async (file: DriveFile) => {
+    const result = await upgradeScript(file, BACKEND_SCRIPT);
+    if (!result) throw new Error('升級失敗');
+    const current = localStorage.getItem('my_music_script_url');
+    if (current && current === file.scriptUrl && result.scriptUrl && result.scriptUrl !== current) {
+      localStorage.setItem('my_music_script_url', result.scriptUrl);
+    }
+    await fetchFiles('musicbook-');
+  };
 
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [ newCreationSheetName, setNewCreationSheetName ] = useState<string[]>([]);
@@ -218,6 +232,8 @@ const SheetSelector = ({ token, onSelect }: { token: string, onSelect: (endpoint
             isNew={newCreationSheetName.some((sheetName) => file.name.includes(sheetName))}
             key={file.id}
             file={file}
+            needsUpgrade={needsScriptUpgrade(file)}
+            onUpgrade={() => handleUpgrade(file)}
             onSelect={(scriptUrl) => {
               if (scriptUrl) {
                 handleStoreEndpoint(scriptUrl);

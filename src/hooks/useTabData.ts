@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { fetchScript } from './fetch';
+import { fetchScript, ScriptError } from './fetch';
 import { dbGet, dbPut } from '../utils/db';
 import type { TabData, RawData } from '../types';
 
@@ -109,7 +109,13 @@ export const useTabData = (scriptUrl: string | null) => {
           try {
             if (!task.data) return;
             const url = scriptUrl.includes('?') ? `${scriptUrl}&method=UPDATE` : `${scriptUrl}?method=UPDATE`;
-            await fetchScript(url, 'POST', task.data);
+            try {
+              await fetchScript(url, 'POST', task.data);
+            } catch (e) {
+              // 雲端沒有這筆（例如在試算表上被手動刪除）→ 改為新增，避免每 5 秒重試失敗
+              if (!(e instanceof ScriptError && e.isNotFound)) throw e;
+              await fetchScript(scriptUrl, 'POST', [task.data]);
+            }
             completedTaskIds.push(task.id);
           } catch (e) { console.error(`Edit failed for task ${task.id}`, e); }
         }));
@@ -121,7 +127,11 @@ export const useTabData = (scriptUrl: string | null) => {
             const url = scriptUrl.includes('?') ? `${scriptUrl}&method=DELETE` : `${scriptUrl}?method=DELETE`;
             await fetchScript(url, 'POST', { id: task.targetId });
             completedTaskIds.push(task.id);
-          } catch (e) { console.error(`Delete failed for task ${task.id}`, e); }
+          } catch (e) {
+            // 雲端已經沒有這筆（例如從未上傳成功或已被刪除）→ 目的已達成
+            if (e instanceof ScriptError && e.isNotFound) completedTaskIds.push(task.id);
+            else console.error(`Delete failed for task ${task.id}`, e);
+          }
         }));
       }
 
