@@ -12,7 +12,7 @@ interface PlayProps {
 }
 
 type ChordShape = 'Open' | 'A' | 'E' | null;
-type EyeSettings = { trigger: number; anchor: number; dwell: number };
+type EyeSettings = { trigger: number; anchor: number; dwell: number; duration: number };
 type StoredSettings = {
   measuresPerRow: number;
   transposeOffset: number;
@@ -28,7 +28,7 @@ const DEFAULT_SETTINGS: StoredSettings = {
   showChordPhoto: true,
   lyricsOnly: false,
   chordShape: null,
-  eyeSettings: { trigger: 0.65, anchor: 0.2, dwell: 700 },
+  eyeSettings: { trigger: 0.65, anchor: 0.2, dwell: 700, duration: 1200 },
 };
 
 // 只取認得的欄位（舊版的 top/bottom/speed/frequency 直接捨棄）
@@ -37,7 +37,12 @@ const sanitizeEyeSettings = (raw: unknown): EyeSettings => {
   if (!raw || typeof raw !== 'object') return d;
   const r = raw as Record<string, unknown>;
   const num = (v: unknown, fallback: number) => (typeof v === 'number' && Number.isFinite(v) ? v : fallback);
-  return { trigger: num(r.trigger, d.trigger), anchor: num(r.anchor, d.anchor), dwell: num(r.dwell, d.dwell) };
+  return {
+    trigger: num(r.trigger, d.trigger),
+    anchor: num(r.anchor, d.anchor),
+    dwell: num(r.dwell, d.dwell),
+    duration: num(r.duration, d.duration),
+  };
 };
 
 const loadPlaySettings = (id: string | undefined): StoredSettings => {
@@ -104,9 +109,8 @@ const MeasureView: React.FC<MeasureViewProps> = ({ measure, subdivisions, showCh
           ))}
           <span className="ml-auto text-[10px] font-black text-muted-foreground tracking-widest">#{measure.id}</span>
         </div>
-        {measure.lyrics && (
-          <p className="text-lg font-medium leading-relaxed text-foreground">{measure.lyrics}</p>
-        )}
+        {/* 沒有歌詞也保留一行高度，避免整行塌陷 */}
+        <p className="text-lg font-medium leading-relaxed text-foreground min-h-[1.625em]">{measure.lyrics}</p>
       </div>
     );
   }
@@ -240,6 +244,7 @@ const Play: React.FC<PlayProps> = ({ tabData }) => {
     eyeRef.current = new EyeScroller('main-scroll-container', {
       ...eyeSettings,
       rowSelector: '[data-eye-row]',
+      highlightClass: 'eye-row-highlight',
     });
     return () => { eyeRef.current?.disable(); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -364,7 +369,8 @@ const Play: React.FC<PlayProps> = ({ tabData }) => {
         [
           { key: 'trigger', label: '觸發線（看到此線以下）', min: 0.5, max: 0.9, step: 0.05, fmt: (v: number) => `${Math.round(v * 100)}%` },
           { key: 'anchor',  label: '翻頁後對齊位置',         min: 0.1, max: 0.4, step: 0.05, fmt: (v: number) => `${Math.round(v * 100)}%` },
-          { key: 'dwell',   label: '停留時間',               min: 300, max: 2000, step: 100, fmt: (v: number) => `${(v / 1000).toFixed(1)} 秒` },
+          { key: 'dwell',    label: '停留時間',               min: 300, max: 2000, step: 100, fmt: (v: number) => `${(v / 1000).toFixed(1)} 秒` },
+          { key: 'duration', label: '翻頁捲動時間',           min: 300, max: 3000, step: 100, fmt: (v: number) => `${(v / 1000).toFixed(1)} 秒` },
         ] as const
       ).map(({ key, label, min, max, step, fmt }) => (
         <label key={key} className="flex flex-col gap-1.5 min-w-[140px]">

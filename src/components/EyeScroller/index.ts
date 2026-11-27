@@ -20,8 +20,12 @@ export interface EyeScrollerOptions {
   anchor?: number;
   /** 需要停留多久才翻頁（ms） */
   dwell?: number;
-  /** 翻頁後的冷卻時間（ms），讓眼睛重新找到閱讀位置 */
+  /** 翻頁後的冷卻時間（ms，從捲動結束起算），讓眼睛重新找到閱讀位置 */
   cooldown?: number;
+  /** 翻頁捲動動畫時間（ms）；瀏覽器內建 smooth scroll 太快且無法調整 */
+  duration?: number;
+  /** 翻頁時加到「正在看的那一行」的 class，作為眼睛跟隨的視覺錨點 */
+  highlightClass?: string;
   /** 用來對齊整行的元素選擇器；找不到時直接依視線位置捲動 */
   rowSelector?: string;
 }
@@ -85,6 +89,7 @@ export class EyeScroller {
   private _dotEl: HTMLDivElement | null = null;
   private _calibrationEl: HTMLDivElement | null = null;
   private _loopId: number | null = null;
+  private _animId: number | null = null;
 
   constructor(target: string | HTMLElement | null = null, options: EyeScrollerOptions = {}) {
     this._targetInput = target;
@@ -92,8 +97,10 @@ export class EyeScroller {
       trigger: options.trigger ?? 0.65,
       anchor: options.anchor ?? 0.2,
       dwell: options.dwell ?? 700,
-      cooldown: options.cooldown ?? 1200,
+      cooldown: options.cooldown ?? 800,
+      duration: options.duration ?? 1200,
       rowSelector: options.rowSelector ?? '',
+      highlightClass: options.highlightClass ?? '',
     };
   }
 
@@ -114,6 +121,7 @@ export class EyeScroller {
 
   disable(): void {
     this.stop();
+    this._cancelScroll();
     this._isEnabled = false;
     this._isTracking = false;
     this._samples = [];
@@ -221,34 +229,76 @@ export class EyeScroller {
     this._dwellStart ??= now;
     this._setState('dwelling');
     if (now - this._dwellStart >= this.opts.dwell) {
-      this._advance(y, h);
+      const scrolled = this._advance(y, h);
       this._dwellStart = null;
       this._samples = [];
-      this._cooldownUntil = now + this.opts.cooldown;
+      this._cooldownUntil = now + (scrolled ? this.opts.duration : 0) + this.opts.cooldown;
       this._setState('cooldown');
     }
   }
 
-  /** 把視線所在的那一行捲到 anchor 位置 */
-  private _advance(gazeY: number, h: number): void {
+  /** 把視線所在的那一行捲到 anchor 位置；回傳是否有捲動 */
+  private _advance(gazeY: number, h: number): boolean {
     const anchorY = h * this.opts.anchor;
     const minStep = h * 0.15;
     let delta = gazeY - anchorY;
+    let rowEl: HTMLElement | null = null;
 
     if (this.opts.rowSelector) {
       const rows = Array.from(document.querySelectorAll<HTMLElement>(this.opts.rowSelector));
-      let row: DOMRect | null = null;
       for (const el of rows) {
-        const r = el.getBoundingClientRect();
-        if (r.top <= gazeY) row = r; else break;
+        if (el.getBoundingClientRect().top <= gazeY) rowEl = el; else break;
       }
+      const top = rowEl?.getBoundingClientRect().top;
       // 該行很高時對齊行首可能幾乎不動，退回依視線位置捲動
-      if (row && row.top - anchorY >= minStep) delta = row.top - anchorY;
+      if (top !== undefined && top - anchorY >= minStep) delta = top - anchorY;
     }
 
-    if (delta < minStep) return;
-    const target: HTMLElement | Window = this._scrollTarget ?? window;
-    target.scrollBy({ top: delta, behavior: 'smooth' });
+    if (delta < minStep) return false;
+    if (rowEl) this._highlight(rowEl);
+    this._animateScroll(delta);
+    return true;
+  }
+
+  /** 以 easeInOutCubic 捲動 delta px；使用者手動捲動時立即中止 */
+  private _animateScroll(delta: number): void {
+    this._cancelScroll();
+    const target = this._scrollTarget ?? document.scrollingElement ?? document.documentElement;
+    const from = target.scrollTop;
+    const duration = Math.max(this.opts.duration, 1);
+    const startT = performance.now();
+    const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+
+    const step = (t: number) => {
+      const p = Math.min((t - startT) / duration, 1);
+      target.scrollTop = from + delta * ease(p);
+      if (p < 1) this._animId = requestAnimationFrame(step);
+      else this._cancelScroll();
+    };
+    this._animId = requestAnimationFrame(step);
+
+    window.addEventListener('wheel', this._onUserScroll, { passive: true });
+    window.addEventListener('touchstart', this._onUserScroll, { passive: true });
+    window.addEventListener('keydown', this._onUserScroll);
+  }
+
+  private _onUserScroll = (): void => this._cancelScroll();
+
+  private _cancelScroll(): void {
+    if (this._animId !== null) cancelAnimationFrame(this._animId);
+    this._animId = null;
+    window.removeEventListener('wheel', this._onUserScroll);
+    window.removeEventListener('touchstart', this._onUserScroll);
+    window.removeEventListener('keydown', this._onUserScroll);
+  }
+
+  private _highlight(el: HTMLElement): void {
+    const cls = this.opts.highlightClass;
+    if (!cls) return;
+    el.classList.remove(cls);
+    void el.offsetWidth; // 重新觸發 CSS 動畫
+    el.classList.add(cls);
+    window.setTimeout(() => el.classList.remove(cls), this.opts.duration + 1000);
   }
 
   private _setState(state: GazeState): void {

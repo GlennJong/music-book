@@ -151,6 +151,16 @@ input {
   padding-right: 0;
 }
 
+/* 視線翻頁時標示「剛才在讀的那一行」，讓眼睛跟著它移動 */
+.eye-row-highlight {
+  border-radius: 12px;
+  animation: eye-row-highlight 2s ease-out;
+}
+@keyframes eye-row-highlight {
+  0%, 50% { background-color: var(--primary-subtle); box-shadow: 0 0 0 6px var(--primary-subtle); }
+  100%    { background-color: transparent; box-shadow: 0 0 0 6px transparent; }
+}
+
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }

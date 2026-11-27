@@ -10,9 +10,9 @@ interface PhotoProps {
 
 const GuitarChordPhoto: React.FC<PhotoProps> = ({ chord, isShowTitle = true, size = 'lg' }) => {
   if (!chord) return (
-    <div className="flex flex-col items-center justify-center h-64 w-48 bg-muted rounded-3xl border-2 border-dashed border-border">
-      <span className="material-icons text-muted-foreground text-4xl mb-2">music_off</span>
-      <p className="text-muted-foreground font-bold text-xs">無此指法</p>
+    <div className="flex flex-col items-center justify-center h-64 w-48 bg-white rounded-3xl border-2 border-dashed border-zinc-300">
+      <span className="material-icons text-zinc-300 text-4xl mb-2">music_off</span>
+      <p className="text-zinc-400 font-bold text-xs">無此指法</p>
     </div>
   );
 
@@ -27,24 +27,24 @@ const GuitarChordPhoto: React.FC<PhotoProps> = ({ chord, isShowTitle = true, siz
   const SX = cfg.w / 5, SY = cfg.h / 5;
 
   return (
-    <div className={`flex flex-col items-center bg-card rounded-xl border border-border animate-in fade-in zoom-in duration-300 ${cfg.p}`}>
-      {isShowTitle && <h3 className={`font-black text-foreground mb-2 tracking-tight ${cfg.ts}`}>{name}</h3>}
+    <div className={`flex flex-col items-center bg-white rounded-xl border border-zinc-200 animate-in fade-in zoom-in duration-300 ${cfg.p}`}>
+      {isShowTitle && <h3 className={`font-black text-zinc-900 mb-2 tracking-tight ${cfg.ts}`}>{name}</h3>}
       <svg width={cfg.w + cfg.ml + 20} height={cfg.h + cfg.mt + 20} viewBox={`0 0 ${cfg.w + cfg.ml + 20} ${cfg.h + cfg.mt + 20}`}>
-        {startFret > 1 && <text x={cfg.ml - 4} y={cfg.mt + SY / 2 + (cfg.ls / 2)} textAnchor="end" fontSize={cfg.ls} fontWeight="bold" className="fill-primary">{startFret}fr</text>}
+        {startFret > 1 && <text x={cfg.ml - 4} y={cfg.mt + SY / 2 + (cfg.ls / 2)} textAnchor="end" fontSize={cfg.ls} fontWeight="bold" fill="#18181b">{startFret}fr</text>}
         {pos.map((f, i) => {
           const x = cfg.ml + i * SX, ym = cfg.mt - 6;
-          if (f === null) return <text key={i} x={x} y={ym} textAnchor="middle" fontSize={cfg.ms} fontWeight="bold" className="fill-muted-foreground">X</text>;
-          if (f === 0) return <circle key={i} cx={x} cy={ym - 5} r={SX * 0.22} fill="none" className="stroke-text-secondary" strokeWidth="1.5" />;
+          if (f === null) return <text key={i} x={x} y={ym} textAnchor="middle" fontSize={cfg.ms} fontWeight="bold" fill="#71717a">X</text>;
+          if (f === 0) return <circle key={i} cx={x} cy={ym - 5} r={SX * 0.22} fill="none" stroke="#52525b" strokeWidth="1.5" />;
           return null;
         })}
-        <g className="stroke-foreground" strokeWidth="1.5">
+        <g stroke="#18181b" strokeWidth="1.5">
           {[...Array(6)].map((_, i) => <line key={i} x1={cfg.ml + i * SX} y1={cfg.mt} x2={cfg.ml + i * SX} y2={cfg.mt + cfg.h} />)}
           {[...Array(6)].map((_, i) => <line key={i} x1={cfg.ml} y1={cfg.mt + i * SY} x2={cfg.ml + cfg.w} y2={cfg.mt + i * SY} strokeWidth={i === 0 && startFret === 1 ? "6" : "1.2"} />)}
         </g>
-        {barre && <rect x={cfg.ml + (barre.from - 1) * SX - (SX * 0.2)} y={cfg.mt + (barre.fret - startFret) * SY + SY / 2 - (SY * 0.25)} width={(barre.to - barre.from) * SX + (SX * 0.4)} height={SY * 0.5} rx={SY * 0.25} className="fill-foreground" />}
+        {barre && <rect x={cfg.ml + (barre.from - 1) * SX - (SX * 0.2)} y={cfg.mt + (barre.fret - startFret) * SY + SY / 2 - (SY * 0.25)} width={(barre.to - barre.from) * SX + (SX * 0.4)} height={SY * 0.5} rx={SY * 0.25} fill="#18181b" />}
         {pos.map((f, i) => {
           if (f === null || f === 0 || (barre && f === barre.fret && (i + 1) >= barre.from && (i + 1) <= barre.to)) return null;
-          return <circle key={i} cx={cfg.ml + i * SX} cy={cfg.mt + (f - startFret) * SY + SY / 2} r={SX * 0.35} className="fill-foreground" />;
+          return <circle key={i} cx={cfg.ml + i * SX} cy={cfg.mt + (f - startFret) * SY + SY / 2} r={SX * 0.35} fill="#18181b" />;
         })}
       </svg>
     </div>
